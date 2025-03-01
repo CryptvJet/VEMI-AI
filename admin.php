@@ -206,6 +206,15 @@ if (!empty($search_param)) {
 $stmt->execute();
 $sessions_result = $stmt->get_result();
 $stmt->close();
+
+// Fetch user tracking data
+$user_tracking_query = "
+    SELECT * FROM user_tracking
+    ORDER BY created_at DESC
+    LIMIT $limit OFFSET $offset
+";
+
+$user_tracking_result = $conn->query($user_tracking_query);
 ?>
 
 <!DOCTYPE html>
@@ -351,7 +360,49 @@ $stmt->close();
         <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
     </div>
 
+    <!-- ✅ User Tracking Logs -->
+    <h2>User Tracking Logs</h2>
+    <table>
+        <tr>
+            <th>User Agent</th>
+            <th>Browser Name</th>
+            <th>Browser Version</th>
+            <th>OS</th>
+            <th>Window Size</th>
+            <th>Screen Size</th>
+            <th>Referrer</th>
+            <th>Current URL</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>IP Address</th>
+            <th>Timestamp</th>
+        </tr>
+        <?php while ($row = $user_tracking_result->fetch_assoc()) { ?>
+        <tr>
+            <td><?php echo htmlspecialchars($row['user_agent']); ?></td>
+            <td><?php echo htmlspecialchars($row['browser_name']); ?></td>
+            <td><?php echo htmlspecialchars($row['browser_version']); ?></td>
+            <td><?php echo htmlspecialchars($row['os']); ?></td>
+            <td><?php echo htmlspecialchars($row['window_width'] . 'x' . $row['window_height']); ?></td>
+            <td><?php echo htmlspecialchars($row['screen_width'] . 'x' . $row['screen_height']); ?></td>
+            <td><?php echo htmlspecialchars($row['referrer']); ?></td>
+            <td><?php echo htmlspecialchars($row['current_url']); ?></td>
+            <td><?php echo htmlspecialchars($row['latitude']); ?></td>
+            <td><?php echo htmlspecialchars($row['longitude']); ?></td>
+            <td><?php echo htmlspecialchars($row['ip_address']); ?></td>
+            <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+        </tr>
+        <?php } ?>
+    </table>
+
+    <!-- ✅ Pagination Controls for User Tracking Logs -->
+    <div class="pagination">
+        <a href="?page=<?php echo $page - 1; ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
+        <span>Page <?php echo $page . " of " . $total_pages; ?></span>
+        <a href="?page=<?php echo $page + 1; ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
+    </div>
+
 </body>
 </html>
 
-<?php $conn->close(); ?>
+<?php $conn->close();
