@@ -52,6 +52,22 @@ if (isset($_GET["delete"])) {
     exit;
 }
 
+// ✅ Handle editing trained responses
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["edit_user_message"]) && isset($_POST["edit_bot_response"]) && isset($_POST["response_id"])) {
+    $edit_user_message = trim($_POST["edit_user_message"]);
+    $edit_bot_response = trim($_POST["edit_bot_response"]);
+    $response_id = intval($_POST["response_id"]);
+
+    if (!empty($edit_user_message) && !empty($edit_bot_response)) {
+        $stmt = $conn->prepare("UPDATE responses SET user_message = ?, bot_response = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $edit_user_message, $edit_bot_response, $response_id);
+        $stmt->execute();
+        $stmt->close();
+        header("Location: admin.php");
+        exit;
+    }
+}
+
 // ✅ Search functionality for unanswered questions
 $unanswered_search_query = isset($_GET["unanswered_search"]) ? trim($_GET["unanswered_search"]) : "";
 
@@ -277,6 +293,12 @@ $stmt->close();
             <td><?php echo htmlspecialchars($row['user_message']); ?></td>
             <td><?php echo htmlspecialchars($row['bot_response']); ?></td>
             <td>
+                <form method="POST">
+                    <input type="hidden" name="response_id" value="<?php echo $row['id']; ?>">
+                    <input type="text" name="edit_user_message" value="<?php echo htmlspecialchars($row['user_message']); ?>" required>
+                    <input type="text" name="edit_bot_response" value="<?php echo htmlspecialchars($row['bot_response']); ?>" required>
+                    <button type="submit" class="btn">Edit</button>
+                </form>
                 <a href="?delete=<?php echo $row['id']; ?>" class="btn delete-btn">Delete</a>
             </td>
         </tr>
