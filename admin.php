@@ -75,27 +75,35 @@ $unanswered_limit = 10;
 $unanswered_page = isset($_GET['unanswered_page']) ? max(1, intval($_GET['unanswered_page'])) : 1;
 $unanswered_offset = ($unanswered_page - 1) * $unanswered_limit;
 
-$unanswered_where_clause = "";
+$unanswered_where_clause = "bot_response = 'I don\'t know yet!'";
 $unanswered_search_param = [];
 
 // ✅ If there's a search query, filter results
 if (!empty($unanswered_search_query)) {
-    $unanswered_where_clause = "AND user_message LIKE ?";
+    $unanswered_where_clause .= " AND user_message LIKE ?";
     $unanswered_search_param[] = "%$unanswered_search_query%";
 }
 
 // ✅ Fetch unanswered questions with pagination
-$unanswered_result = $conn->query("
+$stmt = $conn->prepare("
     SELECT id, user_message 
     FROM messages 
-    WHERE bot_response = 'I don\'t know yet!'
-    $unanswered_where_clause
+    WHERE $unanswered_where_clause
     ORDER BY created_at DESC
-    LIMIT $unanswered_limit OFFSET $unanswered_offset
+    LIMIT ? OFFSET ?
 ");
 
+if (!empty($unanswered_search_param)) {
+    $stmt->bind_param("sii", ...$unanswered_search_param, $unanswered_limit, $unanswered_offset);
+} else {
+    $stmt->bind_param("ii", $unanswered_limit, $unanswered_offset);
+}
+$stmt->execute();
+$unanswered_result = $stmt->get_result();
+$stmt->close();
+
 // ✅ Get Total Unanswered Questions Count
-$total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE bot_response = 'I don\'t know yet!' $unanswered_where_clause";
+$total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE $unanswered_where_clause";
 $stmt = $conn->prepare($total_unanswered_query);
 
 if (!empty($unanswered_search_param)) {
@@ -116,35 +124,35 @@ $responses_limit = 10;
 $responses_page = isset($_GET['responses_page']) ? max(1, intval($_GET['responses_page'])) : 1;
 $responses_offset = ($responses_page - 1) * $responses_limit;
 
-$responses_where_clause = "";
+$responses_where_clause = "response_type = 'Master'";
 $responses_search_param = [];
 
 // ✅ If there's a search query, filter results
 if (!empty($responses_search_query)) {
-    $responses_where_clause = "AND (user_message LIKE ? OR bot_response LIKE ?)";
+    $responses_where_clause .= " AND (user_message LIKE ? OR bot_response LIKE ?)";
     $responses_search_param[] = "%$responses_search_query%";
     $responses_search_param[] = "%$responses_search_query%";
 }
 
 // ✅ Fetch trained responses (Only "Master" responses) with pagination
-$responses_query = "
+$stmt = $conn->prepare("
     SELECT * FROM responses 
-    WHERE response_type = 'Master'
-    $responses_where_clause
+    WHERE $responses_where_clause
     ORDER BY created_at DESC
-    LIMIT $responses_limit OFFSET $responses_offset
-";
+    LIMIT ? OFFSET ?
+");
 
-$stmt = $conn->prepare($responses_query);
 if (!empty($responses_search_param)) {
-    $stmt->bind_param("ss", ...$responses_search_param);
+    $stmt->bind_param("ssii", ...$responses_search_param, $responses_limit, $responses_offset);
+} else {
+    $stmt->bind_param("ii", $responses_limit, $responses_offset);
 }
 $stmt->execute();
 $responses_result = $stmt->get_result();
 $stmt->close();
 
 // ✅ Get Total Trained Responses Count
-$total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE response_type = 'Master' $responses_where_clause";
+$total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE $responses_where_clause";
 $stmt = $conn->prepare($total_responses_query);
 
 if (!empty($responses_search_param)) {
@@ -196,12 +204,14 @@ $sessions_query = "
     $where_clause
     GROUP BY session_id, ip_address
     ORDER BY last_activity DESC
-    LIMIT $limit OFFSET $offset
+    LIMIT ? OFFSET ?
 ";
 
 $stmt = $conn->prepare($sessions_query);
 if (!empty($search_param)) {
-    $stmt->bind_param("ss", ...$search_param);
+    $stmt->bind_param("ssii", ...$search_param, $limit, $offset);
+} else {
+    $stmt->bind_param("ii", $limit, $offset);
 }
 $stmt->execute();
 $sessions_result = $stmt->get_result();
