@@ -201,7 +201,7 @@ if (!empty($search_param)) {
 $stmt->execute();
 $total_result = $stmt->get_result();
 $total_row = $total_result->fetch_assoc();
-$total_sessions = $total_row['total'];
+total_sessions = $total_row['total'];
 $total_pages = ceil($total_sessions / $limit);
 $stmt->close();
 
