@@ -160,7 +160,7 @@ $stmt->close();
 // ✅ Search functionality for session logs
 $search_query = isset($_GET["search"]) ? trim($_GET["search"]) : "";
 
-// ✅ Pagination for Session Logs
+// ✅ Pagination for Session Logs and User Tracking Logs
 $limit = 10;
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $offset = ($page - 1) * $limit;
@@ -170,17 +170,22 @@ $search_param = [];
 
 // ✅ If there's a search query, filter results
 if (!empty($search_query)) {
-    $where_clause = "WHERE session_id LIKE ? OR ip_address LIKE ?";
+    $where_clause = "WHERE session_id LIKE ? OR ip_address LIKE ? OR user_agent LIKE ?";
+    $search_param[] = "%$search_query%";
     $search_param[] = "%$search_query%";
     $search_param[] = "%$search_query%";
 }
 
 // ✅ Get Total Session Logs Count
-$total_query = "SELECT COUNT(DISTINCT session_id) AS total FROM session_logs $where_clause";
+$total_query = "SELECT COUNT(*) AS total FROM (
+    SELECT session_id, ip_address, user_agent, created_at FROM session_logs
+    UNION ALL
+    SELECT null AS session_id, ip_address, user_agent, created_at FROM user_tracking
+) AS combined_logs $where_clause";
 $stmt = $conn->prepare($total_query);
 
 if (!empty($search_param)) {
-    $stmt->bind_param("ss", ...$search_param);
+    $stmt->bind_param("sss", ...$search_param);
 }
 $stmt->execute();
 $total_result = $stmt->get_result();
@@ -189,32 +194,25 @@ $total_sessions = $total_row['total'];
 $total_pages = ceil($total_sessions / $limit);
 $stmt->close();
 
-// ✅ Fetch Paginated Session Logs
+// ✅ Fetch Paginated Session Logs and User Tracking Logs
 $sessions_query = "
-    SELECT DISTINCT session_id, ip_address, MAX(created_at) AS last_activity
-    FROM session_logs
+    SELECT * FROM (
+        SELECT session_id, ip_address, user_agent, created_at FROM session_logs
+        UNION ALL
+        SELECT null AS session_id, ip_address, user_agent, created_at FROM user_tracking
+    ) AS combined_logs
     $where_clause
-    GROUP BY session_id, ip_address
-    ORDER BY last_activity DESC
+    ORDER BY created_at DESC
     LIMIT $limit OFFSET $offset
 ";
 
 $stmt = $conn->prepare($sessions_query);
 if (!empty($search_param)) {
-    $stmt->bind_param("ss", ...$search_param);
+    $stmt->bind_param("sss", ...$search_param);
 }
 $stmt->execute();
 $sessions_result = $stmt->get_result();
 $stmt->close();
-
-// Fetch user tracking data
-$user_tracking_query = "
-    SELECT * FROM user_tracking
-    ORDER BY created_at DESC
-    LIMIT $limit OFFSET $offset
-";
-
-$user_tracking_result = $conn->query($user_tracking_query);
 ?>
 
 <!DOCTYPE html>
@@ -330,10 +328,10 @@ $user_tracking_result = $conn->query($user_tracking_query);
         <a href="?responses_page=<?php echo $responses_page + 1; ?>" class="<?php echo ($responses_page >= $total_responses_pages) ? 'disabled' : ''; ?>">Next ▶</a>
     </div>
 
-    <!-- ✅ Session Logs -->
-    <h2>Session Logs</h2>
+    <!-- ✅ Session and User Tracking Logs -->
+    <h2>Session and User Tracking Logs</h2>
     <form method="GET">
-        <input type="text" name="search" placeholder="Search Session ID or IP" value="<?php echo htmlspecialchars($search_query); ?>">
+        <input type="text" name="search" placeholder="Search Session ID, IP, or User Agent" value="<?php echo htmlspecialchars($search_query); ?>">
         <button type="submit" class="btn">Search</button>
         <a href="admin.php" class="btn delete-btn">Clear</a>
     </form>
@@ -342,67 +340,27 @@ $user_tracking_result = $conn->query($user_tracking_query);
         <tr>
             <th>Session ID</th>
             <th>IP Address</th>
+            <th>User Agent</th>
             <th>Last Activity</th>
         </tr>
         <?php while ($row = $sessions_result->fetch_assoc()) { ?>
         <tr>
-            <td><a href="view_entry.php?session_id=<?php echo $row['session_id']; ?>" target="_blank"><?php echo htmlspecialchars($row['session_id']); ?></a></td>
+            <td><?php echo htmlspecialchars($row['session_id']); ?></td>
             <td><?php echo htmlspecialchars($row['ip_address']); ?></td>
-            <td><?php echo $row['last_activity']; ?></td>
+            <td><?php echo htmlspecialchars($row['user_agent']); ?></td>
+            <td><?php echo htmlspecialchars($row['created_at']); ?></td>
         </tr>
         <?php } ?>
     </table>
 
-    <!-- ✅ Pagination Controls for Session Logs -->
+    <!-- ✅ Pagination Controls for Session and User Tracking Logs -->
     <div class="pagination">
         <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
         <span>Page <?php echo $page . " of " . $total_pages; ?></span>
         <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
     </div>
 
-    <!-- ✅ User Tracking Logs -->
-    <h2>User Tracking Logs</h2>
-    <table>
-        <tr>
-            <th>User Agent</th>
-            <th>Browser Name</th>
-            <th>Browser Version</th>
-            <th>OS</th>
-            <th>Window Size</th>
-            <th>Screen Size</th>
-            <th>Referrer</th>
-            <th>Current URL</th>
-            <th>Latitude</th>
-            <th>Longitude</th>
-            <th>IP Address</th>
-            <th>Timestamp</th>
-        </tr>
-        <?php while ($row = $user_tracking_result->fetch_assoc()) { ?>
-        <tr>
-            <td><?php echo htmlspecialchars($row['user_agent']); ?></td>
-            <td><?php echo htmlspecialchars($row['browser_name']); ?></td>
-            <td><?php echo htmlspecialchars($row['browser_version']); ?></td>
-            <td><?php echo htmlspecialchars($row['os']); ?></td>
-            <td><?php echo htmlspecialchars($row['window_width'] . 'x' . $row['window_height']); ?></td>
-            <td><?php echo htmlspecialchars($row['screen_width'] . 'x' . $row['screen_height']); ?></td>
-            <td><?php echo htmlspecialchars($row['referrer']); ?></td>
-            <td><?php echo htmlspecialchars($row['current_url']); ?></td>
-            <td><?php echo htmlspecialchars($row['latitude']); ?></td>
-            <td><?php echo htmlspecialchars($row['longitude']); ?></td>
-            <td><?php echo htmlspecialchars($row['ip_address']); ?></td>
-            <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-        </tr>
-        <?php } ?>
-    </table>
-
-    <!-- ✅ Pagination Controls for User Tracking Logs -->
-    <div class="pagination">
-        <a href="?page=<?php echo $page - 1; ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
-        <span>Page <?php echo $page . " of " . $total_pages; ?></span>
-        <a href="?page=<?php echo $page + 1; ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
-    </div>
-
 </body>
 </html>
 
-<?php $conn->close();
+<?php $conn->close(); ?>
