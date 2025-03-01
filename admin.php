@@ -6,7 +6,7 @@ $database = "vemite5_ai";
 
 $conn = new mysqli($servername, $username, $password, $database);
 if ($conn->connect_error) {
-    die("Database connection failed");
+    die("Database connection failed: " . $conn->connect_error);
 }
 
 // ✅ Handle adding/editing responses
@@ -94,7 +94,6 @@ $unanswered_result = $conn->query("
     LIMIT $unanswered_limit OFFSET $unanswered_offset
 ");
 
-// ✅ Get Total Unanswered Questions Count
 $total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE bot_response = 'I don\'t know yet!' $unanswered_where_clause";
 $stmt = $conn->prepare($total_unanswered_query);
 
@@ -353,7 +352,7 @@ $stmt->close();
         <?php } ?>
     </table>
 
-    <!-- ✅ Pagination Controls for Session and User Tracking Logs 222222 -->
+    <!-- ✅ Pagination Controls for Session and User Tracking Logs -->
     <div class="pagination">
         <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
         <span>Page <?php echo $page . " of " . $total_pages; ?></span>
