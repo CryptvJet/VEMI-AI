@@ -53,14 +53,13 @@ if (isset($_GET["delete"])) {
 }
 
 // ✅ Handle editing trained responses
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["edit_user_message"]) && isset($_POST["edit_bot_response"]) && isset($_POST["response_id"])) {
-    $edit_user_message = trim($_POST["edit_user_message"]);
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["edit_bot_response"]) && isset($_POST["response_id"])) {
     $edit_bot_response = trim($_POST["edit_bot_response"]);
     $response_id = intval($_POST["response_id"]);
 
-    if (!empty($edit_user_message) && !empty($edit_bot_response)) {
-        $stmt = $conn->prepare("UPDATE responses SET user_message = ?, bot_response = ? WHERE id = ?");
-        $stmt->bind_param("ssi", $edit_user_message, $edit_bot_response, $response_id);
+    if (!empty($edit_bot_response)) {
+        $stmt = $conn->prepare("UPDATE responses SET bot_response = ? WHERE id = ?");
+        $stmt->bind_param("si", $edit_bot_response, $response_id);
         $stmt->execute();
         $stmt->close();
         header("Location: admin.php");
@@ -224,7 +223,14 @@ $stmt->close();
         .pagination { margin-top: 10px; text-align: center; }
         .pagination a { padding: 5px 10px; margin: 2px; text-decoration: none; background: #007bff; color: white; border-radius: 5px; }
         .pagination a.disabled { background: gray; pointer-events: none; }
+        .edit-form { display: none; }
+        .edit-form.active { display: block; }
     </style>
+    <script>
+        function showEditForm(id) {
+            document.getElementById('edit_form_' + id).classList.toggle('active');
+        }
+    </script>
 </head>
 <body>
 
@@ -291,14 +297,16 @@ $stmt->close();
         <?php while ($row = $responses_result->fetch_assoc()) { ?>
         <tr>
             <td><?php echo htmlspecialchars($row['user_message']); ?></td>
-            <td><?php echo htmlspecialchars($row['bot_response']); ?></td>
             <td>
-                <form method="POST">
+                <span id="response_text_<?php echo $row['id']; ?>"><?php echo htmlspecialchars($row['bot_response']); ?></span>
+                <form id="edit_form_<?php echo $row['id']; ?>" class="edit-form" method="POST">
                     <input type="hidden" name="response_id" value="<?php echo $row['id']; ?>">
-                    <input type="text" name="edit_user_message" value="<?php echo htmlspecialchars($row['user_message']); ?>" required>
                     <input type="text" name="edit_bot_response" value="<?php echo htmlspecialchars($row['bot_response']); ?>" required>
-                    <button type="submit" class="btn">Edit</button>
+                    <button type="submit" class="btn">Save</button>
                 </form>
+            </td>
+            <td>
+                <button class="btn" onclick="showEditForm(<?php echo $row['id']; ?>)">Edit</button>
                 <a href="?delete=<?php echo $row['id']; ?>" class="btn delete-btn">Delete</a>
             </td>
         </tr>
