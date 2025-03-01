@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About VEMi AI Chat Bot</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="container">
+        <h1>VEMi AI Chat Bot - About & Documentation</h1>
+        
+        <h2>Overview</h2>
+        <p>VEMi AI is an advanced chatbot system designed to provide intelligent, real-time responses to user queries. The bot utilizes a structured database to store and manage trained responses, session logs, and user interactions. Key features include:</p>
+        <ul>
+            <li>🌟 **AI-Powered Chat System**</li>
+            <li>💾 **Database-Driven Responses**</li>
+            <li>🎙️ **Voice-to-Text Input Support**</li>
+            <li>📄 **Session Logging & Management**</li>
+            <li>🔍 **Searchable Logs & Responses**</li>
+            <li>⚙️ **Admin Panel for Response Training**</li>
+        </ul>
+
+        <h2>Project Scope</h2>
+        <p>VEMi AI is structured into multiple components, ensuring a **scalable, efficient, and easy-to-maintain** chatbot experience. The core components include:</p>
+        <ol>
+            <li><strong>Frontend:</strong> Chat UI for users to interact with the bot (HTML, CSS, JS).</li>
+            <li><strong>Backend:</strong> PHP scripts for processing chat requests and managing responses.</li>
+            <li><strong>Database:</strong> MySQL-based storage for chat logs, responses, and user sessions.</li>
+            <li><strong>Admin Panel:</strong> A control interface for training AI responses and managing logs.</li>
+        </ol>
+
+        <h2>Database Installation Guide</h2>
+        <p>To install the database and connect it to VEMi AI, follow these steps:</p>
+        <ol>
+            <li>✅ Open **phpMyAdmin** or any MySQL management tool.</li>
+            <li>✅ Create a **new database** named `vemite5_ai`.</li>
+            <li>✅ Import the following SQL structure:
+                <pre>
+CREATE TABLE responses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_message TEXT NOT NULL,
+    bot_response TEXT NOT NULL,
+    response_type ENUM('Master', 'AI', 'UP') NOT NULL DEFAULT 'AI',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE session_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    user_message TEXT NOT NULL,
+    bot_response TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+                </pre>
+            </li>
+            <li>✅ Update `config.php` with your database credentials.</li>
+            <li>✅ Verify the connection by running `admin.php`.</li>
+        </ol>
+
+        <h2>Version History</h2>
+        <table>
+            <tr>
+                <th>Version</th>
+                <th>Date</th>
+                <th>Changes</th>
+            </tr>
+            <tr>
+                <td>1.0</td>
+                <td>Initial Release</td>
+                <td>Basic chatbot system with simple responses.</td>
+            </tr>
+            <tr>
+                <td>1.1</td>
+                <td>+ Pagination</td>
+                <td>Implemented pagination for trained responses.</td>
+            </tr>
+            <tr>
+                <td>1.2</td>
+                <td>+ Voice Input</td>
+                <td>Added voice-to-text functionality using Web Speech API.</td>
+            </tr>
+            <tr>
+                <td>1.3</td>
+                <td>+ Admin Logs</td>
+                <td>Enabled session logs and search functionality.</td>
+            </tr>
+            <tr>
+                <td>1.3.2</td>
+                <td>+ UI Enhancements</td>
+                <td>Improved chat UI, added admin controls, and fixed logging issues.</td>
+            </tr>
+        </table>
+
+        <h2>System Architecture</h2>
+        <p>The chatbot follows a **modular architecture** for maintainability and scalability. Below is a high-level diagram:</p>
+        <img src="architecture.png" alt="VEMi AI Architecture" style="width: 100%; max-width: 600px;">
+
+        <h2>How It Works</h2>
+        <p>VEMi AI follows a structured approach to handling user queries:</p>
+        <ol>
+            <li>📝 **User sends a message.**</li>
+            <li>🔍 **System searches for a trained response.**</li>
+            <li>🤖 **Bot replies with the closest match.**</li>
+            <li>💡 **If no match is found, the question is stored for training.**</li>
+            <li>📊 **Session logs are stored for analysis.**</li>
+        </ol>
+
+        <h2>Future Enhancements</h2>
+        <p>Planned improvements for VEMi AI include:</p>
+        <ul>
+            <li>🧠 **AI Learning:** Allow the bot to learn dynamically from conversations.</li>
+            <li>📈 **Analytics Dashboard:** Insights into user interactions and trends.</li>
+            <li>🌍 **Multi-Language Support:** Expanding chatbot capabilities beyond English.</li>
+            <li>⚡ **Faster Processing:** Optimizing database queries for better response time.</li>
+        </ul>
+
+        <h2>Credits & Contributors</h2>
+        <p>VEMi AI is developed by **VEMi Labs** and supported by an evolving team of developers.</p>
+        
+        <h2>Contact & Support</h2>
+        <p>If you need support or want to contribute, contact us at: <a href="mailto:support@vemi-ai.com">support@vemi-ai.com</a></p>
+    </div>
+</body>
+</html>
