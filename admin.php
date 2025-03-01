@@ -196,7 +196,7 @@ if (!empty($search_param)) {
 $stmt->execute();
 $total_result = $stmt->get_result();
 $total_row = $total_result->fetch_assoc();
-total_sessions = $total_row['total'];
+$total_sessions = $total_row['total'];
 $total_pages = ceil($total_sessions / $limit);
 $stmt->close();
 
@@ -226,4 +226,5 @@ $sessions_stmt->close();
     <title>Admin Panel - Manage Responses & Logs</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
-        table
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #

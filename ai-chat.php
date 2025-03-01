@@ -120,7 +120,7 @@ $stmt->bind_param("ssss", $session_id, $ip_address, $user_message, $bot_response
 $stmt->execute();
 $stmt->close();
 
-// Ensure "How can I help you?" appears once per response cycle
+// 1111Ensure "How can I help you?" appears once per response cycle
 if (!isset($_SESSION["help_shown"])) {
     $_SESSION["help_shown"] = false;
 }

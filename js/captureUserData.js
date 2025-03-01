@@ -9,9 +9,8 @@ function getUserData() {
     var windowHeight = window.innerHeight;
     var referrer = document.referrer;
     var currentUrl = window.location.href;
-    var ipAddress = ''; // This will be set on the server side
+    var ipAddress = '';
 
-    // Function to get the user's IP address from an external service
     fetch('https://api.ipify.org?format=json')
         .then(response => response.json())
         .then(data => {
@@ -42,35 +41,28 @@ function getUserData() {
     }
 
     function getBrowserName() {
-        if ((!!window.opr && !!opr.addons) || !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0) {
-            return 'Opera';
-        } else if (typeof InstallTrigger !== 'undefined') {
-            return 'Firefox';
-        } else if (Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0) {
-            return 'Safari';
-        } else if (!!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime)) {
-            return 'Chrome';
-        } else if (!!document.documentMode) {
-            return 'IE';
-        } else {
-            return 'Unknown';
-        }
+        var userAgent = navigator.userAgent;
+        if (userAgent.indexOf("Opera") != -1 || userAgent.indexOf('OPR') != -1) return "Opera";
+        else if (userAgent.indexOf("Chrome") != -1) return "Chrome";
+        else if (userAgent.indexOf("Safari") != -1) return "Safari";
+        else if (userAgent.indexOf("Firefox") != -1) return "Firefox";
+        else if (userAgent.indexOf("MSIE") != -1 || !!document.documentMode == true) return "IE";
+        else return "Unknown";
     }
 
     function getBrowserVersion() {
-        var ua = navigator.userAgent;
-        var tem;
-        var match = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+        var userAgent = navigator.userAgent;
+        var match = userAgent.match(/(firefox|msie|chrome|safari|opr|trident(?=\/))\/?\s*(\d+)/i) || [];
         if (/trident/i.test(match[1])) {
-            tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
-            return tem[1] || '';
+            var tem = /\brv[ :]+(\d+)/g.exec(userAgent) || [];
+            return (tem[1] || "");
         }
         if (match[1] === 'Chrome') {
-            tem = ua.match(/\b(OPR|Edge)\/(\d+)/);
-            if (tem !== null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
+            var tem = userAgent.match(/\b(OPR|Edge)\/(\d+)/);
+            if (tem != null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
         }
         match = match[2] ? [match[1], match[2]] : [navigator.appName, navigator.appVersion, '-?'];
-        if ((tem = ua.match(/version\/(\d+)/i)) !== null) match.splice(1, 1, tem[1]);
+        if ((tem = userAgent.match(/version\/(\d+)/i)) != null) match.splice(1, 1, tem[1]);
         return match.join(' ');
     }
 
