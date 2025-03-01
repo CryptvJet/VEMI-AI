@@ -227,4 +227,6 @@ $sessions_stmt->close();
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border: 1px solid #
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        .btn { padding: 5px 10px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; border: none; cursor: pointer; }
+        .btn:hover { background

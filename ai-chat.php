@@ -108,7 +108,7 @@ if ($result->num_rows > 0) {
     $bot_response = "I don't know yet!";
     
     // Log unanswered question for training
-    $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\'t know yet!', NOW())");
+    $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
     $stmt->bind_param("s", $user_message);
     $stmt->execute();
     $stmt->close();
@@ -120,7 +120,7 @@ $stmt->bind_param("ssss", $session_id, $ip_address, $user_message, $bot_response
 $stmt->execute();
 $stmt->close();
 
-// 1111Ensure "How can I help you?" appears once per response cycle
+// Ensure "How can I help you?" appears once per response cycle
 if (!isset($_SESSION["help_shown"])) {
     $_SESSION["help_shown"] = false;
 }
