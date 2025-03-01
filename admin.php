@@ -6,8 +6,11 @@ $database = "vemite5_ai";
 
 $conn = new mysqli($servername, $username, $password, $database);
 if ($conn->connect_error) {
-    die("Database connection failed");
+    die("Database connection failed: " . $conn->connect_error);
 }
+
+// Enable error reporting for debugging
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // ✅ Handle adding/editing responses
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["user_message"]) && isset($_POST["bot_response"])) {
@@ -201,7 +204,7 @@ if (!empty($search_param)) {
 $stmt->execute();
 $total_result = $stmt->get_result();
 $total_row = $total_result->fetch_assoc();
-total_sessions = $total_row['total'];
+$total_sessions = $total_row['total'];
 $total_pages = ceil($total_sessions / $limit);
 $stmt->close();
 
