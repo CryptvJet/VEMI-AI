@@ -60,12 +60,25 @@ $unanswered_result = $conn->query("
     ORDER BY created_at DESC
 ");
 
-// ✅ Fetch trained responses (Only "Master" responses)
+// ✅ Pagination for Trained Responses
+$responses_limit = 10;
+$responses_page = isset($_GET['responses_page']) ? max(1, intval($_GET['responses_page'])) : 1;
+$responses_offset = ($responses_page - 1) * $responses_limit;
+
+// ✅ Fetch trained responses (Only "Master" responses) with pagination
 $responses_result = $conn->query("
     SELECT * FROM responses 
     WHERE response_type = 'Master' 
     ORDER BY created_at DESC
+    LIMIT $responses_limit OFFSET $responses_offset
 ");
+
+// ✅ Get Total Trained Responses Count
+$total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE response_type = 'Master'";
+$total_responses_result = $conn->query($total_responses_query);
+$total_responses_row = $total_responses_result->fetch_assoc();
+$total_responses = $total_responses_row['total'];
+$total_responses_pages = ceil($total_responses / $responses_limit);
 
 // ✅ Search functionality for session logs
 $search_query = isset($_GET["search"]) ? trim($_GET["search"]) : "";
@@ -191,6 +204,13 @@ $stmt->close();
         <?php } ?>
     </table>
 
+    <!-- ✅ Pagination Controls for Trained Responses -->
+    <div class="pagination">
+        <a href="?responses_page=<?php echo $responses_page - 1; ?>" class="<?php echo ($responses_page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
+        <span>Page <?php echo $responses_page . " of " . $total_responses_pages; ?></span>
+        <a href="?responses_page=<?php echo $responses_page + 1; ?>" class="<?php echo ($responses_page >= $total_responses_pages) ? 'disabled' : ''; ?>">Next ▶</a>
+    </div>
+
     <!-- ✅ Session Logs -->
     <h2>Session Logs</h2>
     <form method="GET">
@@ -214,7 +234,7 @@ $stmt->close();
         <?php } ?>
     </table>
 
-    <!-- ✅ Pagination Controls -->
+    <!-- ✅ Pagination Controls for Session Logs -->
     <div class="pagination">
         <a href="?page=<?php echo $page - 1; ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
         <span>Page <?php echo $page . " of " . $total_pages; ?></span>
