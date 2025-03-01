@@ -71,12 +71,12 @@ $total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE bot_resp
 $total_unanswered_result = $conn->query($total_unanswered_query);
 $total_unanswered_row = $total_unanswered_result->fetch_assoc();
 $total_unanswered = $total_unanswered_row['total'];
-total_unanswered_pages = ceil($total_unanswered / $unanswered_limit);
+$total_unanswered_pages = ceil($total_unanswered / $unanswered_limit);
 
 // ✅ Pagination for Trained Responses
 $responses_limit = 10;
-responses_page = isset($_GET['responses_page']) ? max(1, intval($_GET['responses_page'])) : 1;
-responses_offset = ($responses_page - 1) * $responses_limit;
+$responses_page = isset($_GET['responses_page']) ? max(1, intval($_GET['responses_page'])) : 1;
+$responses_offset = ($responses_page - 1) * $responses_limit;
 
 // ✅ Fetch trained responses (Only "Master" responses) with pagination
 $responses_result = $conn->query("
@@ -91,7 +91,7 @@ $total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE response
 $total_responses_result = $conn->query($total_responses_query);
 $total_responses_row = $total_responses_result->fetch_assoc();
 $total_responses = $total_responses_row['total'];
-total_responses_pages = ceil($total_responses / $responses_limit);
+$total_responses_pages = ceil($total_responses / $responses_limit);
 
 // ✅ Search functionality for session logs
 $search_query = isset($_GET["search"]) ? trim($_GET["search"]) : "";
@@ -122,7 +122,7 @@ $stmt->execute();
 $total_result = $stmt->get_result();
 $total_row = $total_result->fetch_assoc();
 $total_sessions = $total_row['total'];
-total_pages = ceil($total_sessions / $limit);
+$total_pages = ceil($total_sessions / $limit);
 $stmt->close();
 
 // ✅ Fetch Paginated Session Logs
