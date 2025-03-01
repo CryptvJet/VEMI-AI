@@ -52,18 +52,31 @@ if (isset($_GET["delete"])) {
     exit;
 }
 
-// ✅ Fetch unanswered questions
+// ✅ Pagination for Unanswered Questions
+$unanswered_limit = 10;
+$unanswered_page = isset($_GET['unanswered_page']) ? max(1, intval($_GET['unanswered_page'])) : 1;
+$unanswered_offset = ($unanswered_page - 1) * $unanswered_limit;
+
+// ✅ Fetch unanswered questions with pagination
 $unanswered_result = $conn->query("
     SELECT id, user_message 
     FROM messages 
     WHERE bot_response = 'I don\'t know yet!'
     ORDER BY created_at DESC
+    LIMIT $unanswered_limit OFFSET $unanswered_offset
 ");
+
+// ✅ Get Total Unanswered Questions Count
+$total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE bot_response = 'I don\'t know yet!'";
+$total_unanswered_result = $conn->query($total_unanswered_query);
+$total_unanswered_row = $total_unanswered_result->fetch_assoc();
+$total_unanswered = $total_unanswered_row['total'];
+total_unanswered_pages = ceil($total_unanswered / $unanswered_limit);
 
 // ✅ Pagination for Trained Responses
 $responses_limit = 10;
-$responses_page = isset($_GET['responses_page']) ? max(1, intval($_GET['responses_page'])) : 1;
-$responses_offset = ($responses_page - 1) * $responses_limit;
+responses_page = isset($_GET['responses_page']) ? max(1, intval($_GET['responses_page'])) : 1;
+responses_offset = ($responses_page - 1) * $responses_limit;
 
 // ✅ Fetch trained responses (Only "Master" responses) with pagination
 $responses_result = $conn->query("
@@ -78,7 +91,7 @@ $total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE response
 $total_responses_result = $conn->query($total_responses_query);
 $total_responses_row = $total_responses_result->fetch_assoc();
 $total_responses = $total_responses_row['total'];
-$total_responses_pages = ceil($total_responses / $responses_limit);
+total_responses_pages = ceil($total_responses / $responses_limit);
 
 // ✅ Search functionality for session logs
 $search_query = isset($_GET["search"]) ? trim($_GET["search"]) : "";
@@ -109,7 +122,7 @@ $stmt->execute();
 $total_result = $stmt->get_result();
 $total_row = $total_result->fetch_assoc();
 $total_sessions = $total_row['total'];
-$total_pages = ceil($total_sessions / $limit);
+total_pages = ceil($total_sessions / $limit);
 $stmt->close();
 
 // ✅ Fetch Paginated Session Logs
@@ -184,6 +197,13 @@ $stmt->close();
         </tr>
         <?php } ?>
     </table>
+
+    <!-- ✅ Pagination Controls for Unanswered Questions -->
+    <div class="pagination">
+        <a href="?unanswered_page=<?php echo $unanswered_page - 1; ?>" class="<?php echo ($unanswered_page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
+        <span>Page <?php echo $unanswered_page . " of " . $total_unanswered_pages; ?></span>
+        <a href="?unanswered_page=<?php echo $unanswered_page + 1; ?>" class="<?php echo ($unanswered_page >= $total_unanswered_pages) ? 'disabled' : ''; ?>">Next ▶</a>
+    </div>
 
     <!-- ✅ Trained Responses -->
     <h3>Trained Responses</h3>
