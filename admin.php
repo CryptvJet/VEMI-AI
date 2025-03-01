@@ -212,6 +212,7 @@ $stmt->close();
 <html>
 <head>
     <title>Admin Panel - Manage Responses & Logs</title>
+    <script src="/js/captureUserData.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -345,9 +346,9 @@ $stmt->close();
 
     <!-- ✅ Pagination Controls for Session Logs -->
     <div class="pagination">
-        <a href="?page=<?php echo $page - 1; ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
+        <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
         <span>Page <?php echo $page . " of " . $total_pages; ?></span>
-        <a href="?page=<?php echo $page + 1; ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
+        <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
     </div>
 
 </body>
