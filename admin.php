@@ -52,46 +52,95 @@ if (isset($_GET["delete"])) {
     exit;
 }
 
+// ✅ Search functionality for unanswered questions
+$unanswered_search_query = isset($_GET["unanswered_search"]) ? trim($_GET["unanswered_search"]) : "";
+
 // ✅ Pagination for Unanswered Questions
 $unanswered_limit = 10;
 $unanswered_page = isset($_GET['unanswered_page']) ? max(1, intval($_GET['unanswered_page'])) : 1;
 $unanswered_offset = ($unanswered_page - 1) * $unanswered_limit;
+
+$unanswered_where_clause = "";
+$unanswered_search_param = [];
+
+// ✅ If there's a search query, filter results
+if (!empty($unanswered_search_query)) {
+    $unanswered_where_clause = "AND user_message LIKE ?";
+    $unanswered_search_param[] = "%$unanswered_search_query%";
+}
 
 // ✅ Fetch unanswered questions with pagination
 $unanswered_result = $conn->query("
     SELECT id, user_message 
     FROM messages 
     WHERE bot_response = 'I don\'t know yet!'
+    $unanswered_where_clause
     ORDER BY created_at DESC
     LIMIT $unanswered_limit OFFSET $unanswered_offset
 ");
 
 // ✅ Get Total Unanswered Questions Count
-$total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE bot_response = 'I don\'t know yet!'";
-$total_unanswered_result = $conn->query($total_unanswered_query);
+$total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE bot_response = 'I don\'t know yet!' $unanswered_where_clause";
+$stmt = $conn->prepare($total_unanswered_query);
+
+if (!empty($unanswered_search_param)) {
+    $stmt->bind_param("s", ...$unanswered_search_param);
+}
+$stmt->execute();
+$total_unanswered_result = $stmt->get_result();
 $total_unanswered_row = $total_unanswered_result->fetch_assoc();
 $total_unanswered = $total_unanswered_row['total'];
 $total_unanswered_pages = ceil($total_unanswered / $unanswered_limit);
+$stmt->close();
+
+// ✅ Search functionality for trained responses
+$responses_search_query = isset($_GET["responses_search"]) ? trim($_GET["responses_search"]) : "";
 
 // ✅ Pagination for Trained Responses
 $responses_limit = 10;
 $responses_page = isset($_GET['responses_page']) ? max(1, intval($_GET['responses_page'])) : 1;
 $responses_offset = ($responses_page - 1) * $responses_limit;
 
+$responses_where_clause = "";
+$responses_search_param = [];
+
+// ✅ If there's a search query, filter results
+if (!empty($responses_search_query)) {
+    $responses_where_clause = "AND (user_message LIKE ? OR bot_response LIKE ?)";
+    $responses_search_param[] = "%$responses_search_query%";
+    $responses_search_param[] = "%$responses_search_query%";
+}
+
 // ✅ Fetch trained responses (Only "Master" responses) with pagination
-$responses_result = $conn->query("
+$responses_query = "
     SELECT * FROM responses 
-    WHERE response_type = 'Master' 
+    WHERE response_type = 'Master'
+    $responses_where_clause
     ORDER BY created_at DESC
     LIMIT $responses_limit OFFSET $responses_offset
-");
+";
+
+$stmt = $conn->prepare($responses_query);
+if (!empty($responses_search_param)) {
+    $stmt->bind_param("ss", ...$responses_search_param);
+}
+$stmt->execute();
+$responses_result = $stmt->get_result();
+$stmt->close();
 
 // ✅ Get Total Trained Responses Count
-$total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE response_type = 'Master'";
-$total_responses_result = $conn->query($total_responses_query);
+$total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE response_type = 'Master' $responses_where_clause";
+$stmt = $conn->prepare($total_responses_query);
+
+if (!empty($responses_search_param)) {
+    $stmt->bind_param("ss", ...$responses_search_param);
+}
+$stmt->execute();
+$total_responses_result = $stmt->get_result();
 $total_responses_row = $total_responses_result->fetch_assoc();
 $total_responses = $total_responses_row['total'];
 $total_responses_pages = ceil($total_responses / $responses_limit);
+$stmt->close();
 
 // ✅ Search functionality for session logs
 $search_query = isset($_GET["search"]) ? trim($_GET["search"]) : "";
@@ -175,6 +224,11 @@ $stmt->close();
 
     <!-- ✅ Unanswered Questions -->
     <h3>Unanswered Questions (Needs Training)</h3>
+    <form method="GET">
+        <input type="text" name="unanswered_search" placeholder="Search User Message" value="<?php echo htmlspecialchars($unanswered_search_query); ?>">
+        <button type="submit" class="btn">Search</button>
+        <a href="admin.php" class="btn delete-btn">Clear</a>
+    </form>
     <table>
         <tr>
             <th>User Message</th>
@@ -207,6 +261,11 @@ $stmt->close();
 
     <!-- ✅ Trained Responses -->
     <h3>Trained Responses</h3>
+    <form method="GET">
+        <input type="text" name="responses_search" placeholder="Search User Message or Bot Response" value="<?php echo htmlspecialchars($responses_search_query); ?>">
+        <button type="submit" class="btn">Search</button>
+        <a href="admin.php" class="btn delete-btn">Clear</a>
+    </form>
     <table>
         <tr>
             <th>User Message</th>
