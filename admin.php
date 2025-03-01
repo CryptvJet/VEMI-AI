@@ -160,8 +160,8 @@ $stmt->execute();
 $total_responses_result = $stmt->get_result();
 $total_responses_row = $total_responses_result->fetch_assoc();
 $total_responses = $total_responses_row['total'];
-$total_responses_pages = ceil($total_responses / $responses_limit);
-$stmt->close();
+total_responses_pages = ceil($total_responses / $responses_limit);
+stmt->close();
 
 // Search functionality for session logs
 $search_query = isset($_GET["search"]) ? trim($_GET["search"]) : "";
@@ -183,22 +183,22 @@ if (!empty($search_query)) {
 }
 
 // Get Total Session Logs Count
-$total_query = "SELECT COUNT(*) AS total FROM (
+total_query = "SELECT COUNT(*) AS total FROM (
     SELECT session_id, ip_address, user_agent, created_at FROM session_logs
     UNION ALL
     SELECT null AS session_id, ip_address, user_agent, created_at FROM user_tracking
 ) AS combined_logs $where_clause";
-$stmt = $conn->prepare($total_query);
+stmt = $conn->prepare($total_query);
 
 if (!empty($search_param)) {
     $stmt->bind_param("sss", ...$search_param);
 }
 $stmt->execute();
-$total_result = $stmt->get_result();
-$total_row = $total_result->fetch_assoc();
-$total_sessions = $total_row['total'];
-$total_pages = ceil($total_sessions / $limit);
-$stmt->close();
+total_result = $stmt->get_result();
+total_row = $total_result->fetch_assoc();
+total_sessions = $total_row['total'];
+total_pages = ceil($total_sessions / $limit);
+stmt->close();
 
 // Fetch Paginated Session Logs and User Tracking Logs
 $sessions_stmt = $conn->prepare("
@@ -229,4 +229,86 @@ $sessions_stmt->close();
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         .btn { padding: 5px 10px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; border: none; cursor: pointer; }
-        .btn:hover { background
+        .btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+
+    <h2>Responses</h2>
+    <form method="GET" action="admin.php">
+        <input type="text" name="responses_search" value="<?php echo htmlspecialchars($responses_search_query); ?>" placeholder="Search responses...">
+        <button type="submit" class="btn">Search</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>User Message</th>
+                <th>Bot Response</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while ($row = $responses_result->fetch_assoc()): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($row['user_message']); ?></td>
+                    <td><?php echo htmlspecialchars($row['bot_response']); ?></td>
+                    <td>
+                        <form method="POST" action="admin.php" style="display:inline;">
+                            <input type="hidden" name="response_id" value="<?php echo $row['id']; ?>">
+                            <input type="text" name="edit_bot_response" placeholder="Edit response" value="<?php echo htmlspecialchars($row['bot_response']); ?>">
+                            <button type="submit" class="btn">Edit</button>
+                        </form>
+                        <a href="admin.php?delete=<?php echo $row['id']; ?>" class="btn">Delete</a>
+                    </td>
+                </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
+
+    <h2>Unanswered Questions</h2>
+    <form method="GET" action="admin.php">
+        <input type="text" name="unanswered_search" value="<?php echo htmlspecialchars($unanswered_search_query); ?>" placeholder="Search unanswered questions...">
+        <button type="submit" class="btn">Search</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>User Message</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while ($row = $unanswered_result->fetch_assoc()): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($row['user_message']); ?></td>
+                    <td>
+                        <form method="POST" action="admin.php" style="display:inline;">
+                            <input type="hidden" name="user_message" value="<?php echo htmlspecialchars($row['user_message']); ?>">
+                            <input type="text" name="bot_response" placeholder="Add response">
+                            <button type="submit" class="btn">Add</button>
+                        </form>
+                        <a href="admin.php?delete_unanswered=<?php echo $row['id']; ?>" class="btn">Delete</a>
+                    </td>
+                </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
+
+    <h2>Session Logs</h2>
+    <form method="GET" action="admin.php">
+        <input type="text" name="search" value="<?php echo htmlspecialchars($search_query); ?>" placeholder="Search session logs...">
+        <button type="submit" class="btn">Search</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>Session ID</th>
+                <th>IP Address</th>
+                <th>User Agent</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while ($row = $sessions_result->fetch_assoc()): ?>
+               
