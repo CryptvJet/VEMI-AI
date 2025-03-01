@@ -85,16 +85,19 @@ if (!empty($unanswered_search_query)) {
 }
 
 // ✅ Fetch unanswered questions with pagination
-$stmt = $conn->prepare("
+$unanswered_query = "
     SELECT id, user_message 
     FROM messages 
     WHERE $unanswered_where_clause
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
-");
+";
+$stmt = $conn->prepare($unanswered_query);
 
 if (!empty($unanswered_search_param)) {
-    $stmt->bind_param("sii", ...$unanswered_search_param, $unanswered_limit, $unanswered_offset);
+    $types = str_repeat("s", count($unanswered_search_param)) . "ii";
+    $params = array_merge($unanswered_search_param, [$unanswered_limit, $unanswered_offset]);
+    $stmt->bind_param($types, ...$params);
 } else {
     $stmt->bind_param("ii", $unanswered_limit, $unanswered_offset);
 }
@@ -107,7 +110,8 @@ $total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE $unanswe
 $stmt = $conn->prepare($total_unanswered_query);
 
 if (!empty($unanswered_search_param)) {
-    $stmt->bind_param("s", ...$unanswered_search_param);
+    $types = str_repeat("s", count($unanswered_search_param));
+    $stmt->bind_param($types, ...$unanswered_search_param);
 }
 $stmt->execute();
 $total_unanswered_result = $stmt->get_result();
@@ -135,15 +139,18 @@ if (!empty($responses_search_query)) {
 }
 
 // ✅ Fetch trained responses (Only "Master" responses) with pagination
-$stmt = $conn->prepare("
+$responses_query = "
     SELECT * FROM responses 
     WHERE $responses_where_clause
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
-");
+";
+$stmt = $conn->prepare($responses_query);
 
 if (!empty($responses_search_param)) {
-    $stmt->bind_param("ssii", ...$responses_search_param, $responses_limit, $responses_offset);
+    $types = str_repeat("s", count($responses_search_param)) . "ii";
+    $params = array_merge($responses_search_param, [$responses_limit, $responses_offset]);
+    $stmt->bind_param($types, ...$params);
 } else {
     $stmt->bind_param("ii", $responses_limit, $responses_offset);
 }
@@ -156,7 +163,8 @@ $total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE $respons
 $stmt = $conn->prepare($total_responses_query);
 
 if (!empty($responses_search_param)) {
-    $stmt->bind_param("ss", ...$responses_search_param);
+    $types = str_repeat("s", count($responses_search_param));
+    $stmt->bind_param($types, ...$responses_search_param);
 }
 $stmt->execute();
 $total_responses_result = $stmt->get_result();
@@ -206,8 +214,8 @@ $sessions_query = "
     ORDER BY last_activity DESC
     LIMIT ? OFFSET ?
 ";
-
 $stmt = $conn->prepare($sessions_query);
+
 if (!empty($search_param)) {
     $stmt->bind_param("ssii", ...$search_param, $limit, $offset);
 } else {
@@ -286,9 +294,9 @@ $stmt->close();
 
     <!-- ✅ Pagination Controls for Unanswered Questions -->
     <div class="pagination">
-        <a href="?unanswered_page=<?php echo $unanswered_page - 1; ?>" class="<?php echo ($unanswered_page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
+        <a href="?unanswered_page=<?php echo $unanswered_page - 1; ?>&unanswered_search=<?php echo urlencode($unanswered_search_query); ?>" class="<?php echo ($unanswered_page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
         <span>Page <?php echo $unanswered_page . " of " . $total_unanswered_pages; ?></span>
-        <a href="?unanswered_page=<?php echo $unanswered_page + 1; ?>" class="<?php echo ($unanswered_page >= $total_unanswered_pages) ? 'disabled' : ''; ?>">Next ▶</a>
+        <a href="?unanswered_page=<?php echo $unanswered_page + 1; ?>&unanswered_search=<?php echo urlencode($unanswered_search_query); ?>" class="<?php echo ($unanswered_page >= $total_unanswered_pages) ? 'disabled' : ''; ?>">Next ▶</a>
     </div>
 
     <!-- ✅ Trained Responses -->
@@ -325,9 +333,9 @@ $stmt->close();
 
     <!-- ✅ Pagination Controls for Trained Responses -->
     <div class="pagination">
-        <a href="?responses_page=<?php echo $responses_page - 1; ?>" class="<?php echo ($responses_page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
+        <a href="?responses_page=<?php echo $responses_page - 1; ?>&responses_search=<?php echo urlencode($responses_search_query); ?>" class="<?php echo ($responses_page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
         <span>Page <?php echo $responses_page . " of " . $total_responses_pages; ?></span>
-        <a href="?responses_page=<?php echo $responses_page + 1; ?>" class="<?php echo ($responses_page >= $total_responses_pages) ? 'disabled' : ''; ?>">Next ▶</a>
+        <a href="?responses_page=<?php echo $responses_page + 1; ?>&responses_search=<?php echo urlencode($responses_search_query); ?>" class="<?php echo ($responses_page >= $total_responses_pages) ? 'disabled' : ''; ?>">Next ▶</a>
     </div>
 
     <!-- ✅ Session Logs -->
@@ -355,9 +363,9 @@ $stmt->close();
 
     <!-- ✅ Pagination Controls for Session Logs -->
     <div class="pagination">
-        <a href="?page=<?php echo $page - 1; ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
+        <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
         <span>Page <?php echo $page . " of " . $total_pages; ?></span>
-        <a href="?page=<?php echo $page + 1; ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
+        <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
     </div>
 
 </body>
