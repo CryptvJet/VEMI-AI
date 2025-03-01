@@ -1,97 +1,98 @@
 function getUserData() {
-    const userData = {
-        userAgent: navigator.userAgent,
-        browserName: getBrowserName(),
-        browserVersion: getBrowserVersion(),
-        os: getOS(),
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        screenWidth: window.screen.width,
-        screenHeight: window.screen.height,
-        referrer: document.referrer,
-        currentUrl: window.location.href
-    };
+    var userAgent = navigator.userAgent;
+    var browserName = getBrowserName();
+    var browserVersion = getBrowserVersion();
+    var os = getOS();
+    var screenWidth = screen.width;
+    var screenHeight = screen.height;
+    var windowWidth = window.innerWidth;
+    var windowHeight = window.innerHeight;
+    var referrer = document.referrer;
+    var currentUrl = window.location.href;
+    var ipAddress = ''; // This will be set on the server side
 
-    // Optionally capture geolocation if user consents
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-            userData.latitude = position.coords.latitude;
-            userData.longitude = position.coords.longitude;
-            sendUserData(userData);
-        }, () => {
-            sendUserData(userData);
+    // Function to get the user's IP address from an external service
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            ipAddress = data.ip;
+            sendUserData();
         });
-    } else {
-        sendUserData(userData);
-    }
-}
 
-function getBrowserName() {
-    if ((navigator.userAgent.indexOf("Opera") || navigator.userAgent.indexOf('OPR')) != -1) {
-        return 'Opera';
-    } else if (navigator.userAgent.indexOf("Chrome") != -1) {
-        return 'Chrome';
-    } else if (navigator.userAgent.indexOf("Safari") != -1) {
-        return 'Safari';
-    } else if (navigator.userAgent.indexOf("Firefox") != -1) {
-        return 'Firefox';
-    } else if ((navigator.userAgent.indexOf("MSIE") != -1) || (!!document.documentMode == true)) {
-        return 'IE';
-    } else {
+    function sendUserData() {
+        var data = {
+            user_agent: userAgent,
+            browser_name: browserName,
+            browser_version: browserVersion,
+            os: os,
+            window_width: windowWidth,
+            window_height: windowHeight,
+            screen_width: screenWidth,
+            screen_height: screenHeight,
+            referrer: referrer,
+            current_url: currentUrl,
+            ip_address: ipAddress
+        };
+
+        fetch('ai-chat.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'log_interaction', data: data })
+        });
+    }
+
+    function getBrowserName() {
+        if ((!!window.opr && !!opr.addons) || !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0) {
+            return 'Opera';
+        } else if (typeof InstallTrigger !== 'undefined') {
+            return 'Firefox';
+        } else if (Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0) {
+            return 'Safari';
+        } else if (!!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime)) {
+            return 'Chrome';
+        } else if (!!document.documentMode) {
+            return 'IE';
+        } else {
+            return 'Unknown';
+        }
+    }
+
+    function getBrowserVersion() {
+        var ua = navigator.userAgent;
+        var tem;
+        var match = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+        if (/trident/i.test(match[1])) {
+            tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
+            return tem[1] || '';
+        }
+        if (match[1] === 'Chrome') {
+            tem = ua.match(/\b(OPR|Edge)\/(\d+)/);
+            if (tem !== null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
+        }
+        match = match[2] ? [match[1], match[2]] : [navigator.appName, navigator.appVersion, '-?'];
+        if ((tem = ua.match(/version\/(\d+)/i)) !== null) match.splice(1, 1, tem[1]);
+        return match.join(' ');
+    }
+
+    function getOS() {
+        var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        if (/windows phone/i.test(userAgent)) {
+            return 'Windows Phone';
+        }
+        if (/android/i.test(userAgent)) {
+            return 'Android';
+        }
+        if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+            return 'iOS';
+        }
+        if (/Macintosh/.test(userAgent)) {
+            return 'MacOS';
+        }
+        if (/Windows/.test(userAgent)) {
+            return 'Windows';
+        }
         return 'Unknown';
     }
 }
 
-function getBrowserVersion() {
-    const userAgent = navigator.userAgent;
-    let browserVersion = 'Unknown';
-    const browserName = getBrowserName();
-
-    if (browserName === 'Chrome') {
-        const match = userAgent.match(/Chrome\/([\d.]+)/);
-        if (match) {
-            browserVersion = match[1];
-        }
-    } else if (browserName === 'Firefox') {
-        const match = userAgent.match(/Firefox\/([\d.]+)/);
-        if (match) {
-            browserVersion = match[1];
-        }
-    } else if (browserName === 'Safari') {
-        const match = userAgent.match(/Version\/([\d.]+)/);
-        if (match) {
-            browserVersion = match[1];
-        }
-    } else if (browserName === 'Opera') {
-        const match = userAgent.match(/Opera\/([\d.]+)/);
-        if (match) {
-            browserVersion = match[1];
-        }
-    } else if (browserName === 'IE') {
-        const match = userAgent.match(/MSIE\s([\d.]+)/);
-        if (match) {
-            browserVersion = match[1];
-        }
-    }
-
-    return browserVersion;
-}
-
-function getOS() {
-    const userAgent = navigator.userAgent;
-    if (userAgent.indexOf("Win") != -1) return "Windows";
-    if (userAgent.indexOf("Mac") != -1) return "MacOS";
-    if (userAgent.indexOf("X11") != -1) return "UNIX";
-    if (userAgent.indexOf("Linux") != -1) return "Linux";
-    return "Unknown";
-}
-
-function sendUserData(userData) {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/track_user_data.php", true);
-    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhr.send(JSON.stringify(userData));
-}
-
-// Call getUserData when the page loads
 window.onload = getUserData;
