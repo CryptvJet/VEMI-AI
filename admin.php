@@ -392,4 +392,5 @@ $stmt->close();
     <!-- Pagination Controls for Session Logs -->
     <div class="pagination">
         <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
-        <span>Page <?php echo $page . " of " .
+        <span>Page <?php echo $page . " of " . $total_pages; ?></span>
+        <a href="?page=<?php echo $page
