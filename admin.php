@@ -23,24 +23,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["user_message"]) && iss
         $stmt = $conn->prepare("INSERT INTO responses (user_message, bot_response, response_type) 
                                 VALUES (?, ?, 'Master') 
                                 ON DUPLICATE KEY UPDATE bot_response = ?, response_type = 'Master'");
-        if (!$stmt) {
-            die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-        }
         $stmt->bind_param("sss", $user_message, $bot_response, $bot_response);
-        if (!$stmt->execute()) {
-            die("Execute failed: (" . $stmt->errno . ") " . $stmt->error);
-        }
+        $stmt->execute();
         $stmt->close();
 
         // Remove from unanswered questions after training
         $stmt = $conn->prepare("DELETE FROM messages WHERE user_message = ?");
-        if (!$stmt) {
-            die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-        }
         $stmt->bind_param("s", $user_message);
-        if (!$stmt->execute()) {
-            die("Execute failed: (" . $stmt->errno . ") " . $stmt->error);
-        }
+        $stmt->execute();
         $stmt->close();
     }
 }
@@ -49,13 +39,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["user_message"]) && iss
 if (isset($_GET["delete_unanswered"])) {
     $delete_id = intval($_GET["delete_unanswered"]);
     $stmt = $conn->prepare("DELETE FROM messages WHERE id = ?");
-    if (!$stmt) {
-        die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-    }
     $stmt->bind_param("i", $delete_id);
-    if (!$stmt->execute()) {
-        die("Execute failed: (" . $stmt->errno . ") " . $stmt->error);
-    }
+    $stmt->execute();
     $stmt->close();
     header("Location: admin.php");
     exit;
@@ -65,13 +50,8 @@ if (isset($_GET["delete_unanswered"])) {
 if (isset($_GET["delete"])) {
     $delete_id = intval($_GET["delete"]);
     $stmt = $conn->prepare("DELETE FROM responses WHERE id = ?");
-    if (!$stmt) {
-        die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-    }
     $stmt->bind_param("i", $delete_id);
-    if (!$stmt->execute()) {
-        die("Execute failed: (" . $stmt->errno . ") " . $stmt->error);
-    }
+    $stmt->execute();
     $stmt->close();
     header("Location: admin.php");
     exit;
@@ -84,13 +64,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["edit_bot_response"]) &
 
     if (!empty($edit_bot_response)) {
         $stmt = $conn->prepare("UPDATE responses SET bot_response = ? WHERE id = ?");
-        if (!$stmt) {
-            die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-        }
         $stmt->bind_param("si", $edit_bot_response, $response_id);
-        if (!$stmt->execute()) {
-            die("Execute failed: (" . $stmt->errno . ") " . $stmt->error);
-        }
+        $stmt->execute();
         $stmt->close();
         header("Location: admin.php");
         exit;
@@ -123,9 +98,6 @@ $unanswered_query = "
     LIMIT ? OFFSET ?
 ";
 $stmt = $conn->prepare($unanswered_query);
-if (!$stmt) {
-    die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-}
 
 if (!empty($unanswered_search_param)) {
     $types = str_repeat("s", count($unanswered_search_param)) . "ii";
@@ -141,9 +113,6 @@ $stmt->close();
 // Get Total Unanswered Questions Count
 $total_unanswered_query = "SELECT COUNT(*) AS total FROM messages WHERE $unanswered_where_clause";
 $stmt = $conn->prepare($total_unanswered_query);
-if (!$stmt) {
-    die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-}
 
 if (!empty($unanswered_search_param)) {
     $types = str_repeat("s", count($unanswered_search_param));
@@ -182,9 +151,6 @@ $responses_query = "
     LIMIT ? OFFSET ?
 ";
 $stmt = $conn->prepare($responses_query);
-if (!$stmt) {
-    die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-}
 
 if (!empty($responses_search_param)) {
     $types = str_repeat("s", count($responses_search_param)) . "ii";
@@ -200,9 +166,6 @@ $stmt->close();
 // Get Total Trained Responses Count
 $total_responses_query = "SELECT COUNT(*) AS total FROM responses WHERE $responses_where_clause";
 $stmt = $conn->prepare($total_responses_query);
-if (!$stmt) {
-    die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-}
 
 if (!empty($responses_search_param)) {
     $types = str_repeat("s", count($responses_search_param));
@@ -236,9 +199,6 @@ if (!empty($search_query)) {
 // Get Total Session Logs Count
 $total_query = "SELECT COUNT(DISTINCT session_id) AS total FROM session_logs $where_clause";
 $stmt = $conn->prepare($total_query);
-if (!$stmt) {
-    die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-}
 
 if (!empty($search_param)) {
     $stmt->bind_param("ss", ...$search_param);
@@ -260,9 +220,6 @@ $sessions_query = "
     LIMIT ? OFFSET ?
 ";
 $stmt = $conn->prepare($sessions_query);
-if (!$stmt) {
-    die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-}
 
 if (!empty($search_param)) {
     $stmt->bind_param("ssii", ...$search_param, $limit, $offset);
@@ -412,3 +369,11 @@ $stmt->close();
     <!-- Pagination Controls for Session Logs -->
     <div class="pagination">
         <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page <= 1) ? 'disabled' : ''; ?>">◀ Previous</a>
+        <span>Page <?php echo $page . " of " . $total_pages; ?></span>
+        <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search_query); ?>" class="<?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Next ▶</a>
+    </div>
+
+</body>
+</html>
+
+<?php $conn->close(); ?>
