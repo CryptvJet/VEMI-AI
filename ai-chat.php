@@ -31,14 +31,21 @@ function logUserInteraction($conn, $data) {
     $stmt = $conn->prepare("INSERT INTO user_tracking (user_agent, browser_name, browser_version, os, window_width, window_height, screen_width, screen_height, referrer, current_url, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("ssssiiiisss", $data['user_agent'], $data['browser_name'], $data['browser_version'], $data['os'], $data['window_width'], $data['window_height'], $data['screen_width'], $data['screen_height'], $data['referrer'], $data['current_url'], $data['ip_address']);
     $stmt->execute();
+    if ($stmt->error) {
+        error_log("Failed to log user interaction: " . $stmt->error);
+    }
     $stmt->close();
 }
 
 // Capture and log user interactions
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "log_interaction") {
-    $data = json_decode(file_get_contents('php://input'), true)['data'];
-    logUserInteraction($conn, $data);
-    exit;
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (isset($input["action"]) && $input["action"] == "log_interaction") {
+        $data = $input['data'];
+        logUserInteraction($conn, $data);
+        echo json_encode(["response" => "User interaction logged."]);
+        exit;
+    }
 }
 
 // Handle "End Chat" Request
@@ -120,7 +127,7 @@ $stmt->bind_param("ssss", $session_id, $ip_address, $user_message, $bot_response
 $stmt->execute();
 $stmt->close();
 
-// 11Ensure "How can I help you?" appears once per response cycle
+// Ensure "How can I help you?" appears once per response cycle
 if (!isset($_SESSION["help_shown"])) {
     $_SESSION["help_shown"] = false;
 }
