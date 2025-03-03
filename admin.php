@@ -245,7 +245,7 @@ $stmt->close();
     </form>
 
     <!-- ✅ Unanswered Questions -->
-    <h3>Unanswered Questions (Needs Training)</h3>
+    <h3>Unanswered Questions (Needs Training) (<?php echo $total_unanswered; ?>)</h3>
     <form method="GET">
         <input type="text" name="unanswered_search" placeholder="Search User Message" value="<?php echo htmlspecialchars($unanswered_search_query); ?>">
         <button type="submit" class="btn">Search</button>
@@ -282,7 +282,7 @@ $stmt->close();
     </div>
 
     <!-- ✅ Trained Responses -->
-    <h3>Trained Responses</h3>
+    <h3>Trained Responses (<?php echo $total_responses; ?>)</h3>
     <form method="GET">
         <input type="text" name="responses_search" placeholder="Search User Message or Bot Response" value="<?php echo htmlspecialchars($responses_search_query); ?>">
         <button type="submit" class="btn">Search</button>
@@ -321,7 +321,7 @@ $stmt->close();
     </div>
 
     <!-- ✅ Session Logs -->
-    <h2>Session Logs</h2>
+    <h2>Session Logs (<?php echo $total_sessions; ?>)</h2>
     <form method="GET">
         <input type="text" name="search" placeholder="Search Session ID or IP" value="<?php echo htmlspecialchars($search_query); ?>">
         <button type="submit" class="btn">Search</button>
