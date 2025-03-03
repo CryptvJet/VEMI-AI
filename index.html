@@ -1,5 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+<script>
+function sendTrackingData() {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const screenWidth = screen.width;
+    const screenHeight = screen.height;
+    navigator.geolocation.getCurrentPosition(function(position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        const trackingUrl = 'log_user_tracking.php?window_width=' + windowWidth +
+                            '&window_height=' + windowHeight +
+                            '&screen_width=' + screenWidth +
+                            '&screen_height=' + screenHeight +
+                            '&latitude=' + latitude +
+                            '&longitude=' + longitude;
+
+        fetch(trackingUrl)
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+    }, function() {
+        const trackingUrl = 'log_user_tracking.php?window_width=' + windowWidth +
+                            '&window_height=' + windowHeight +
+                            '&screen_width=' + screenWidth +
+                            '&screen_height=' + screenHeight;
+
+        fetch(trackingUrl)
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+    });
+}
+
+window.onload = sendTrackingData;
+</script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
