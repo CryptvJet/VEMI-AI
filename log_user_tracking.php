@@ -3,6 +3,11 @@ header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Include Composer's autoload file
+require 'vendor/autoload.php';
+
+use donatj\UserAgent\UserAgentParser;
+
 // Database connection details
 $servername = "localhost";
 $username = "vemite5_ai";
@@ -28,11 +33,12 @@ function getUserIpAddr() {
 
 // Function to get browser details
 function getBrowserDetails($user_agent) {
-    $browser_details = get_browser($user_agent, true);
+    $parser = new UserAgentParser();
+    $result = $parser->parse($user_agent);
     return [
-        'browser_name' => $browser_details['browser'] ?? 'unknown',
-        'browser_version' => $browser_details['version'] ?? 'unknown',
-        'os' => $browser_details['platform'] ?? 'unknown',
+        'browser_name' => $result->browser(),
+        'browser_version' => $result->browserVersion(),
+        'os' => $result->platform(),
     ];
 }
 
