@@ -1,6 +1,8 @@
 function getUserData() {
     var browserVersion = getBrowserVersion();
 
+    console.log("Captured browser version:", browserVersion);
+
     sendUserData();
 
     function sendUserData() {
@@ -8,12 +10,15 @@ function getUserData() {
             browser_version: browserVersion
         };
 
+        console.log("Sending user data:", data);
+
         fetch('ai-chat.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'log_interaction', data: data })
         }).then(response => response.json())
-          .then(data => console.log(data));
+          .then(data => console.log("Response from server:", data))
+          .catch(error => console.error("Error logging user data:", error));
     }
 
     function getBrowserVersion() {

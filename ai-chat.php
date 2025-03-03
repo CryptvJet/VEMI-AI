@@ -29,6 +29,9 @@ if ($conn->connect_error) {
 
 // Function to log user interactions
 function logUserInteraction($conn, $data) {
+    // Log incoming data to a file
+    error_log("Logging user interaction: " . print_r($data, true), 3, "user_interactions.log");
+
     $stmt = $conn->prepare("INSERT INTO user_tracking (browser_version) VALUES (?)");
     if (!$stmt) {
         error_log("Prepare failed: " . $conn->error);
@@ -50,6 +53,7 @@ function logUserInteraction($conn, $data) {
 // Capture and log user interactions
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input = json_decode(file_get_contents('php://input'), true);
+    error_log("Received input: " . print_r($input, true), 3, "user_interactions.log");
     if (isset($input["action"]) && $input["action"] == "log_interaction") {
         $data = $input['data'];
         if (logUserInteraction($conn, $data)) {
