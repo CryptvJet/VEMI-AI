@@ -17,17 +17,41 @@ document.addEventListener("DOMContentLoaded", function () {
 
         clearTimeout(helpTimeout);
 
-        fetch("ai-chat.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "message=" + encodeURIComponent(message),
-        })
-        .then(response => response.json())
-        .then(data => {
-            appendMessage("bot", data.response);
-            helpTimeout = setTimeout(() => appendMessage("bot", "How can I help you?"), 12000);
-        })
-        .catch(error => console.error("❌ Fetch Error:", error));
+        if (message.toLowerCase().startsWith("search wikipedia for")) {
+            const query = message.substring(20).trim();
+            if (query) {
+                fetch(`wikipedia_search.php?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            appendMessage("bot", data.error);
+                        } else {
+                            const results = data.results.map(result => {
+                                return `<a href="${result.url}" target="_blank">${result.title}</a>: ${result.snippet}`;
+                            }).join("<br><br>");
+                            appendMessage("bot", results);
+                        }
+                    })
+                    .catch(error => {
+                        appendMessage("bot", "Error searching Wikipedia.");
+                        console.error("Error:", error);
+                    });
+            } else {
+                appendMessage("bot", "Please provide a search query.");
+            }
+        } else {
+            fetch("ai-chat.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "message=" + encodeURIComponent(message),
+            })
+            .then(response => response.json())
+            .then(data => {
+                appendMessage("bot", data.response);
+                helpTimeout = setTimeout(() => appendMessage("bot", "How can I help you?"), 12000);
+            })
+            .catch(error => console.error("❌ Fetch Error:", error));
+        }
     }
 
     function endChat() {
@@ -95,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function appendMessage(sender, message) {
         const msgDiv = document.createElement("div");
         msgDiv.classList.add(sender);
-        msgDiv.innerText = message;
+        msgDiv.innerHTML = message;
         chatBox.appendChild(msgDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
