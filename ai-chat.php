@@ -22,6 +22,7 @@ $ip_address = $_SERVER['REMOTE_ADDR'];
 
 $conn = new mysqli($servername, $username, $password, $database);
 if ($conn->connect_error) {
+    error_log("Database connection failed: " . $conn->connect_error);
     echo json_encode(["response" => "Database connection failed."]);
     exit;
 }
@@ -29,12 +30,33 @@ if ($conn->connect_error) {
 // Function to log user interactions
 function logUserInteraction($conn, $data) {
     $stmt = $conn->prepare("INSERT INTO user_tracking (user_agent, browser_name, browser_version, os, window_width, window_height, screen_width, screen_height, referrer, current_url, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssiiiisss", $data['user_agent'], $data['browser_name'], $data['browser_version'], $data['os'], $data['window_width'], $data['window_height'], $data['screen_width'], $data['screen_height'], $data['referrer'], $data['current_url'], $data['ip_address']);
-    $stmt->execute();
-    if ($stmt->error) {
-        error_log("Failed to log user interaction: " . $stmt->error);
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        return false;
     }
+
+    $stmt->bind_param("ssssiiiisss", 
+        $data['user_agent'], 
+        $data['browser_name'], 
+        $data['browser_version'], 
+        $data['os'], 
+        $data['window_width'], 
+        $data['window_height'], 
+        $data['screen_width'], 
+        $data['screen_height'], 
+        $data['referrer'], 
+        $data['current_url'], 
+        $data['ip_address']
+    );
+
+    if (!$stmt->execute()) {
+        error_log("Execute failed: " . $stmt->error);
+        $stmt->close();
+        return false;
+    }
+
     $stmt->close();
+    return true;
 }
 
 // Capture and log user interactions
@@ -42,8 +64,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input = json_decode(file_get_contents('php://input'), true);
     if (isset($input["action"]) && $input["action"] == "log_interaction") {
         $data = $input['data'];
-        logUserInteraction($conn, $data);
-        echo json_encode(["response" => "User interaction logged."]);
+        if (logUserInteraction($conn, $data)) {
+            echo json_encode(["response" => "User interaction logged."]);
+        } else {
+            echo json_encode(["response" => "Failed to log user interaction."]);
+        }
         exit;
     }
 }

@@ -11,6 +11,13 @@ function getUserData() {
     var currentUrl = window.location.href;
     var ipAddress = '';
 
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            ipAddress = data.ip;
+            sendUserData();
+        });
+
     function sendUserData() {
         var data = {
             user_agent: userAgent,
@@ -30,15 +37,9 @@ function getUserData() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'log_interaction', data: data })
-        });
+        }).then(response => response.json())
+          .then(data => console.log(data));
     }
-
-    fetch('https://api.ipify.org?format=json')
-        .then(response => response.json())
-        .then(data => {
-            ipAddress = data.ip;
-            sendUserData();
-        });
 
     function getBrowserName() {
         var userAgent = navigator.userAgent;
