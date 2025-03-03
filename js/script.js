@@ -158,5 +158,5 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    window.onload = getUserData;
+    getUserData(); // Capture user data on page load
 });
