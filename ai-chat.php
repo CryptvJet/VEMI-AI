@@ -47,10 +47,35 @@ function logUserInteraction($conn, $session_id, $ip_address, $browser_version) {
     return true;
 }
 
-// Capture and log user interactions
+// Log user interaction on initial page load
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET["init_chat"])) {
+    if (!isset($_SESSION["interaction_logged"])) {
+        $_SESSION["interaction_logged"] = true;
+
+        // Default browser version to 'unknown' if not provided
+        $browser_version = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+
+        if (logUserInteraction($conn, $session_id, $ip_address, $browser_version)) {
+            error_log("User interaction logged on page load.");
+        } else {
+            error_log("Failed to log user interaction on page load.");
+        }
+
+        // Send the initial greeting message
+        $greeting_message = "Heyy, how are you today?!";
+        $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, '', ?, NOW())");
+        $stmt->bind_param("sss", $session_id, $ip_address, $greeting_message);
+        $stmt->execute();
+        $stmt->close();
+
+        echo json_encode(["response" => $greeting_message, "greeting" => true]);
+        exit;
+    }
+}
+
+// Capture and log user interactions via POST request
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input = json_decode(file_get_contents('php://input'), true);
-    error_log("Received input: " . print_r($input, true), 3, "user_interactions.log");
     if (isset($input["action"]) && $input["action"] == "log_interaction") {
         $data = $input['data'];
         if (logUserInteraction($conn, $session_id, $ip_address, $data['browser_version'])) {
@@ -132,23 +157,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $conn->close();
     exit;
-}
-
-// Send the initial greeting message on page load
-if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET["init_chat"])) {
-    if (!isset($_SESSION["greeting_shown"])) {
-        $_SESSION["greeting_shown"] = true;
-
-        $greeting_message = "Heyy, how are you today?!";
-        
-        // Log greeting message in session logs
-        $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, '', ?, NOW())");
-        $stmt->bind_param("sss", $session_id, $ip_address, $greeting_message);
-        $stmt->execute();
-        $stmt->close();
-
-        echo json_encode(["response" => $greeting_message, "greeting" => true]);
-        exit;
-    }
 }
 ?>
