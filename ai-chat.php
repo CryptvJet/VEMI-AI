@@ -146,12 +146,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->close();
             }
         }
-
-        // Log unanswered question for training
-        $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
-        $stmt->bind_param("s", $user_message);
-        $stmt->execute();
-        $stmt->close();
     }
 
     // Save session log
