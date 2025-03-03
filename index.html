@@ -6,6 +6,7 @@ function sendTrackingData() {
     const windowHeight = window.innerHeight;
     const screenWidth = screen.width;
     const screenHeight = screen.height;
+    const referrer = document.referrer;
     navigator.geolocation.getCurrentPosition(function(position) {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
@@ -17,20 +18,32 @@ function sendTrackingData() {
                             '&latitude=' + latitude +
                             '&longitude=' + longitude;
 
-        fetch(trackingUrl)
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error('Error:', error));
+        fetch(trackingUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `referrer=${encodeURIComponent(referrer)}`
+        })
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.error('Error:', error));
     }, function() {
         const trackingUrl = 'log_user_tracking.php?window_width=' + windowWidth +
                             '&window_height=' + windowHeight +
                             '&screen_width=' + screenWidth +
                             '&screen_height=' + screenHeight;
 
-        fetch(trackingUrl)
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error('Error:', error));
+        fetch(trackingUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `referrer=${encodeURIComponent(referrer)}`
+        })
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.error('Error:', error));
     });
 }
 
