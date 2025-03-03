@@ -3,6 +3,7 @@ header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Database connection details
 $servername = "localhost";
 $username = "vemite5_ai";
 $password = "]Rl2!vy+8W3~";
@@ -25,11 +26,22 @@ function getUserIpAddr() {
     }
 }
 
+// Function to get browser details
+function getBrowserDetails($user_agent) {
+    $browser_details = get_browser($user_agent, true);
+    return [
+        'browser_name' => $browser_details['browser'] ?? 'unknown',
+        'browser_version' => $browser_details['version'] ?? 'unknown',
+        'os' => $browser_details['platform'] ?? 'unknown',
+    ];
+}
+
 // Collect user data
 $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-$browser_name = 'unknown'; // Placeholder, use appropriate method to detect browser name
-$browser_version = 'unknown'; // Placeholder, use appropriate method to detect browser version
-$os = 'unknown'; // Placeholder, use appropriate method to detect OS
+$browser_details = getBrowserDetails($user_agent);
+$browser_name = $browser_details['browser_name'];
+$browser_version = $browser_details['browser_version'];
+$os = $browser_details['os'];
 $window_width = isset($_GET['window_width']) ? intval($_GET['window_width']) : 0;
 $window_height = isset($_GET['window_height']) ? intval($_GET['window_height']) : 0;
 $screen_width = isset($_GET['screen_width']) ? intval($_GET['screen_width']) : 0;
