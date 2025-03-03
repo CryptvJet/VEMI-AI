@@ -28,17 +28,14 @@ if ($conn->connect_error) {
 }
 
 // Function to log user interactions
-function logUserInteraction($conn, $data) {
-    // Log incoming data to a file
-    error_log("Logging user interaction: " . print_r($data, true), 3, "user_interactions.log");
-
+function logUserInteraction($conn, $session_id, $ip_address, $browser_version) {
     $stmt = $conn->prepare("INSERT INTO user_tracking (session_id, ip_address, browser_version, interaction_time) VALUES (?, ?, ?, NOW())");
     if (!$stmt) {
         error_log("Prepare failed: " . $conn->error);
         return false;
     }
 
-    $stmt->bind_param("sss", $_SESSION['session_id'], $_SERVER['REMOTE_ADDR'], $data['browser_version']);
+    $stmt->bind_param("sss", $session_id, $ip_address, $browser_version);
 
     if (!$stmt->execute()) {
         error_log("Execute failed: " . $stmt->error);
@@ -52,9 +49,11 @@ function logUserInteraction($conn, $data) {
 
 // Capture and log user interactions
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST["action"]) && $_POST["action"] == "log_interaction") {
-        $data = $_POST['data'];
-        if (logUserInteraction($conn, $data)) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    error_log("Received input: " . print_r($input, true), 3, "user_interactions.log");
+    if (isset($input["action"]) && $input["action"] == "log_interaction") {
+        $data = $input['data'];
+        if (logUserInteraction($conn, $session_id, $ip_address, $data['browser_version'])) {
             echo json_encode(["response" => "User interaction logged."]);
         } else {
             echo json_encode(["response" => "Failed to log user interaction."]);
