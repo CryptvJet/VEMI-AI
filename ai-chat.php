@@ -1,162 +1,157 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const chatBox = document.getElementById("chat-box");
-    const userInput = document.getElementById("user-input");
-    const sendBtn = document.getElementById("send-btn");
-    const speechBtn = document.getElementById("speech-btn"); // ✅ Voice-to-Text Button
-    const endChatBtn = document.getElementById("end-chat-btn");
-    const reloadChatBtn = document.getElementById("reload-chat-btn");
+<?php
+header('Content-Type: application/json');
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set("log_errors", 1);
+ini_set("error_log", "debug.log");
 
-    let helpTimeout;
+$servername = "localhost";
+$username = "vemite5_ai";
+$password = "]Rl2!vy+8W3~";
+$database = "vemite5_ai";
 
-    function sendMessage() {
-        const message = userInput.value.trim();
-        if (message === "") return;
+session_start();
 
-        appendMessage("user", "You: " + message);
-        userInput.value = "";
+// Generate a session ID if not set
+if (!isset($_SESSION['session_id'])) {
+    $_SESSION['session_id'] = bin2hex(random_bytes(8));
+}
 
-        clearTimeout(helpTimeout);
+$session_id = $_SESSION['session_id'];
+$ip_address = $_SERVER['REMOTE_ADDR'];
 
-        fetch("ai-chat.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "message=" + encodeURIComponent(message),
-        })
-        .then(response => response.json())
-        .then(data => {
-            appendMessage("bot", data.response);
-            helpTimeout = setTimeout(() => appendMessage("bot", "How can I help you?"), 12000);
-        })
-        .catch(error => console.error("❌ Fetch Error:", error));
+$conn = new mysqli($servername, $username, $password, $database);
+if ($conn->connect_error) {
+    error_log("Database connection failed: " . $conn->connect_error);
+    echo json_encode(["response" => "Database connection failed."]);
+    exit;
+}
+
+// Function to log user interactions
+function logUserInteraction($conn, $data) {
+    // Log incoming data to a file
+    error_log("Logging user interaction: " . print_r($data, true), 3, "user_interactions.log");
+
+    $stmt = $conn->prepare("INSERT INTO user_tracking (session_id, ip_address, browser_version, interaction_time) VALUES (?, ?, ?, NOW())");
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        return false;
     }
 
-    function endChat() {
-        fetch("ai-chat.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "end_chat=true",
-        })
-        .then(response => response.json())
-        .then(data => appendMessage("bot", data.response))
-        .catch(error => console.error("❌ Fetch Error:", error));
+    $stmt->bind_param("sss", $_SESSION['session_id'], $_SERVER['REMOTE_ADDR'], $data['browser_version']);
+
+    if (!$stmt->execute()) {
+        error_log("Execute failed: " . $stmt->error);
+        $stmt->close();
+        return false;
     }
 
-    function reloadChat() {
-        fetch("ai-chat.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "reset_chat=true",
-        })
-        .then(response => response.json())
-        .then(data => {
-            appendMessage("bot", data.response);
-            setTimeout(() => location.reload(true), 1000);
-        })
-        .catch(error => console.error("❌ Fetch Error:", error));
-    }
+    $stmt->close();
+    return true;
+}
 
-    function startSpeechRecognition() {
-        if (!('webkitSpeechRecognition' in window)) {
-            alert("Your browser does not support Speech Recognition.");
-            return;
+// Capture and log user interactions
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $input = json_decode(file_get_contents('php://input'), true);
+    error_log("Received input: " . print_r($input, true), 3, "user_interactions.log");
+    if (isset($input["action"]) && $input["action"] == "log_interaction") {
+        $data = $input['data'];
+        if (logUserInteraction($conn, $data)) {
+            echo json_encode(["response" => "User interaction logged."]);
+        } else {
+            echo json_encode(["response" => "Failed to log user interaction."]);
         }
-
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = "en-US";
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
-        // ✅ UI Feedback: Change button color & show "Listening..."
-        speechBtn.style.backgroundColor = "red";
-        speechBtn.innerText = "🎙️ Listening...";
-        appendMessage("bot", "🎙️ Listening...");
-
-        recognition.start();
-
-        recognition.onresult = function (event) {
-            const transcript = event.results[0][0].transcript;
-            userInput.value = transcript; // ✅ Auto-fill text box with voice input
-            sendMessage(); // ✅ Auto-send after voice input
-        };
-
-        recognition.onerror = function (event) {
-            console.error("Speech recognition error:", event.error);
-            appendMessage("bot", "❌ Voice input failed. Try again.");
-        };
-
-        recognition.onend = function () {
-            console.log("Speech recognition ended.");
-            // ✅ Reset button back to normal
-            speechBtn.style.backgroundColor = "";
-            speechBtn.innerText = "🎤";
-        };
+        exit;
     }
+}
 
-    function appendMessage(sender, message) {
-        const msgDiv = document.createElement("div");
-        msgDiv.classList.add(sender);
-        msgDiv.innerText = message;
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
+// Handle "End Chat" Request
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["end_chat"])) {
+    $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, 'User ended chat', 'Chat session ended.', NOW())");
+    $stmt->bind_param("ss", $session_id, $ip_address);
+    $stmt->execute();
+    $stmt->close();
+
+    session_destroy();
+    echo json_encode(["response" => "Chat session ended."]);
+    exit;
+}
+
+// Handle "Reload Chat" Request
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reset_chat"])) {
+    $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, 'User refreshed chat', 'Chat reset.', NOW())");
+    $stmt->bind_param("ss", $session_id, $ip_address);
+    $stmt->execute();
+    $stmt->close();
+
+    session_destroy();
+    echo json_encode(["response" => "Chat reset."]);
+    exit;
+}
+
+// Send the initial greeting message on page load
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET["init_chat"])) {
+    if (!isset($_SESSION["greeting_shown"])) {
+        $_SESSION["greeting_shown"] = true;
+
+        $greeting_message = "Heyy, how are you today?!";
+        
+        // Log greeting message in session logs
+        $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, '', ?, NOW())");
+        $stmt->bind_param("sss", $session_id, $ip_address, $greeting_message);
+        $stmt->execute();
+        $stmt->close();
+
+        echo json_encode(["response" => $greeting_message, "greeting" => true]);
+        exit;
     }
+}
 
-    fetch("ai-chat.php?init_chat=true")
-        .then(response => response.json())
-        .then(data => {
-            if (data.greeting) appendMessage("bot", data.response);
-        })
-        .catch(error => console.error("❌ Fetch Error:", error));
+// Get User Message & Normalize Input
+$user_message = trim($_POST["message"] ?? '');
+if ($user_message === '') {
+    echo json_encode(["response" => "I don't know yet!"]);
+    exit;
+}
 
-    sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            sendMessage();
-        }
-    });
-    endChatBtn.addEventListener("click", endChat);
-    reloadChatBtn.addEventListener("click", reloadChat);
-    speechBtn.addEventListener("click", startSpeechRecognition); // ✅ Voice Button Click Event
+$user_message = strtolower($user_message);
+$user_message = preg_replace("/[^a-z0-9\s]/", "", $user_message);
 
-    function getUserData() {
-        var browserVersion = getBrowserVersion();
+// Check for trained responses in the database
+$stmt = $conn->prepare("SELECT bot_response FROM responses WHERE user_message = ? ORDER BY FIELD(response_type, 'Master', 'AI') LIMIT 1");
+$stmt->bind_param("s", $user_message);
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
 
-        console.log("Captured browser version:", browserVersion);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $bot_response = $row['bot_response'];
+} else {
+    // No trained response found
+    $bot_response = "I don't know yet!";
+    
+    // Log unanswered question for training
+    $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
+    $stmt->bind_param("s", $user_message);
+    $stmt->execute();
+    $stmt->close();
+}
 
-        sendUserData();
+// Save session log
+$stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, ?, ?, NOW())");
+$stmt->bind_param("ssss", $session_id, $ip_address, $user_message, $bot_response);
+$stmt->execute();
+$stmt->close();
 
-        function sendUserData() {
-            var data = {
-                browser_version: browserVersion
-            };
+// Ensure "How can I help you?" appears once per response cycle
+if (!isset($_SESSION["help_shown"])) {
+    $_SESSION["help_shown"] = false;
+}
+$_SESSION["last_message_time"] = time();
 
-            console.log("Sending user data:", data);
+echo json_encode(["response" => $bot_response, "show_help" => true]);
 
-            fetch('ai-chat.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'log_interaction', data: data })
-            }).then(response => response.json())
-              .then(data => console.log("Response from server:", data))
-              .catch(error => console.error("Error logging user data:", error));
-        }
-
-        function getBrowserVersion() {
-            var userAgent = navigator.userAgent;
-            var match = userAgent.match(/(firefox|msie|chrome|safari|opr|trident(?=\/))\/?\s*(\d+)/i) || [];
-            if (/trident/i.test(match[1])) {
-                var tem = /\brv[ :]+(\d+)/g.exec(userAgent) || [];
-                return (tem[1] || "");
-            }
-            if (match[1] === 'Chrome') {
-                var tem = userAgent.match(/\b(OPR|Edge)\/(\d+)/);
-                if (tem != null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
-            }
-            match = match[2] ? [match[1], match[2]] : [navigator.appName, navigator.appVersion, '-?'];
-            if ((tem = userAgent.match(/version\/(\d+)/i)) != null) match.splice(1, 1, tem[1]);
-            return match.join(' ');
-        }
-    }
-
-    window.onload = getUserData;
-});
+$conn->close();
+exit;
+?>
