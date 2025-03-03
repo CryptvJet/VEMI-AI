@@ -1,29 +1,11 @@
 function getUserData() {
-    var userAgent = navigator.userAgent;
-    var browserName = getBrowserName();
     var browserVersion = getBrowserVersion();
-    var os = getOS();
-    var screenWidth = screen.width;
-    var screenHeight = screen.height;
-    var windowWidth = window.innerWidth;
-    var windowHeight = window.innerHeight;
-    var referrer = document.referrer;
-    var currentUrl = window.location.href;
 
     sendUserData();
 
     function sendUserData() {
         var data = {
-            user_agent: userAgent,
-            browser_name: browserName,
-            browser_version: browserVersion,
-            os: os,
-            window_width: windowWidth,
-            window_height: windowHeight,
-            screen_width: screenWidth,
-            screen_height: screenHeight,
-            referrer: referrer,
-            current_url: currentUrl
+            browser_version: browserVersion
         };
 
         fetch('ai-chat.php', {
@@ -32,16 +14,6 @@ function getUserData() {
             body: JSON.stringify({ action: 'log_interaction', data: data })
         }).then(response => response.json())
           .then(data => console.log(data));
-    }
-
-    function getBrowserName() {
-        var userAgent = navigator.userAgent;
-        if (userAgent.indexOf("Opera") != -1 || userAgent.indexOf('OPR') != -1) return "Opera";
-        else if (userAgent.indexOf("Chrome") != -1) return "Chrome";
-        else if (userAgent.indexOf("Safari") != -1) return "Safari";
-        else if (userAgent.indexOf("Firefox") != -1) return "Firefox";
-        else if (userAgent.indexOf("MSIE") != -1 || !!document.documentMode == true) return "IE";
-        else return "Unknown";
     }
 
     function getBrowserVersion() {
@@ -58,26 +30,6 @@ function getUserData() {
         match = match[2] ? [match[1], match[2]] : [navigator.appName, navigator.appVersion, '-?'];
         if ((tem = userAgent.match(/version\/(\d+)/i)) != null) match.splice(1, 1, tem[1]);
         return match.join(' ');
-    }
-
-    function getOS() {
-        var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        if (/windows phone/i.test(userAgent)) {
-            return 'Windows Phone';
-        }
-        if (/android/i.test(userAgent)) {
-            return 'Android';
-        }
-        if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-            return 'iOS';
-        }
-        if (/Macintosh/.test(userAgent)) {
-            return 'MacOS';
-        }
-        if (/Windows/.test(userAgent)) {
-            return 'Windows';
-        }
-        return 'Unknown';
     }
 }
 
