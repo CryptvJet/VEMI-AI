@@ -47,6 +47,7 @@ function logUserTracking($conn) {
         return false;
     }
 
+    // Correct number of parameters
     $stmt->bind_param("ssssiiiiisssds", $user_agent, $browser_name, $browser_version, $os, $window_width, $window_height, $screen_width, $screen_height, $referrer, $current_url, $latitude, $longitude, $ip_address);
 
     if (!$stmt->execute()) {
