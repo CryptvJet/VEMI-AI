@@ -131,12 +131,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $row = $result->fetch_assoc();
         $bot_response = $row['bot_response'];
     } else {
-        // No trained response found
-        $bot_response = "I don't know yet!";
+        // No trained response found, search the web
+        $bot_response = searchWeb($user_message);
         
         // Log unanswered question for training
-        $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
-        $stmt->bind_param("s", $user_message);
+        $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, ?, NOW())");
+        $stmt->bind_param("ss", $user_message, $bot_response);
         $stmt->execute();
         $stmt->close();
     }
@@ -157,5 +157,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $conn->close();
     exit;
+}
+
+function searchWeb($query) {
+    $wiki_results = searchWikipedia($query);
+    if (!empty($wiki_results)) {
+        return $wiki_results;
+    } else {
+        return searchDuckDuckGo($query);
+    }
+}
+
+function searchWikipedia($query) {
+    $url = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" . urlencode($query) . "&format=json";
+    $response = file_get_contents($url);
+    if ($response === FALSE) {
+        return "Error fetching data from Wikipedia.";
+    }
+    $data = json_decode($response, true);
+    if (isset($data['query']['search']) && count($data['query']['search']) > 0) {
+        $results = [];
+        foreach ($data['query']['search'] as $result) {
+            $title = $result['title'];
+            $snippet = strip_tags($result['snippet']);
+            $pageUrl = "https://en.wikipedia.org/wiki/" . urlencode($title);
+            $results[] = "<a href=\"$pageUrl\" target=\"_blank\">$title</a>: $snippet";
+        }
+        return implode("<br><br>", $results);
+    } else {
+        return "No results found on Wikipedia.";
+    }
+}
+
+function searchDuckDuckGo($query) {
+    $url = "https://api.duckduckgo.com/?q=" . urlencode($query) . "&format=json";
+    $response = file_get_contents($url);
+    if ($response === FALSE) {
+        return "Error fetching data from DuckDuckGo.";
+    }
+    $data = json_decode($response, true);
+    if (isset($data['Abstract']) && !empty($data['Abstract'])) {
+        return $data['Abstract'];
+    } else {
+        return "No results found on DuckDuckGo.";
+    }
 }
 ?>

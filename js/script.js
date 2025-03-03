@@ -17,59 +17,71 @@ document.addEventListener("DOMContentLoaded", function () {
 
         clearTimeout(helpTimeout);
 
-        if (message.toLowerCase().startsWith("search wikipedia for")) {
-            const query = message.substring(20).trim();
-            searchWikipedia(query);
-        } else if (message.toLowerCase().startsWith("search duckduckgo for")) {
-            const query = message.substring(21).trim();
-            searchDuckDuckGo(query);
-        } else {
-            fetch("ai-chat.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: "message=" + encodeURIComponent(message),
-            })
-            .then(response => response.json())
-            .then(data => {
+        fetch("ai-chat.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "message=" + encodeURIComponent(message),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.response_found) {
                 appendMessage("bot", data.response);
-                helpTimeout = setTimeout(() => appendMessage("bot", "How can I help you?"), 12000);
-            })
-            .catch(error => console.error("❌ Fetch Error:", error));
-        }
+            } else if (message.length > 10) {
+                searchWikipediaOrDuckDuckGo(message);
+            } else {
+                appendMessage("bot", "I couldn't find an answer to your question.");
+            }
+            helpTimeout = setTimeout(() => appendMessage("bot", "How can I help you?"), 12000);
+        })
+        .catch(error => console.error("❌ Fetch Error:", error));
     }
 
-    function searchWikipedia(query) {
-        fetch(`wikipedia_search.php?query=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    appendMessage("bot", data.error);
-                } else {
-                    const results = data.results.map(result => {
+    function searchWikipediaOrDuckDuckGo(query) {
+        searchWikipedia(query)
+            .then(wikiResults => {
+                if (wikiResults.length > 0) {
+                    const results = wikiResults.map(result => {
                         return `<a href="${result.url}" target="_blank">${result.title}</a>: ${result.snippet}`;
                     }).join("<br><br>");
                     appendMessage("bot", results);
+                } else {
+                    searchDuckDuckGo(query)
+                        .then(duckResults => {
+                            if (duckResults) {
+                                appendMessage("bot", duckResults);
+                            } else {
+                                appendMessage("bot", "No relevant results found.");
+                            }
+                        });
                 }
             })
             .catch(error => {
-                appendMessage("bot", "Error searching Wikipedia.");
+                appendMessage("bot", "Error searching the web.");
                 console.error("Error:", error);
             });
     }
 
-    function searchDuckDuckGo(query) {
-        fetch(`duckduckgo_search.php?query=${encodeURIComponent(query)}`)
+    function searchWikipedia(query) {
+        return fetch(`wikipedia_search.php?query=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    appendMessage("bot", data.error);
+                    return [];
                 } else {
-                    appendMessage("bot", data.result);
+                    return data.results;
                 }
-            })
-            .catch(error => {
-                appendMessage("bot", "Error searching DuckDuckGo.");
-                console.error("Error:", error);
+            });
+    }
+
+    function searchDuckDuckGo(query) {
+        return fetch(`duckduckgo_search.php?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    return null;
+                } else {
+                    return data.result;
+                }
             });
     }
 
