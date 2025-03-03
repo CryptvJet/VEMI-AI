@@ -27,19 +27,28 @@ function getUserIpAddr() {
 
 // Collect user data
 $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+$browser_name = 'unknown'; // Placeholder, use appropriate method to detect browser name
+$browser_version = 'unknown'; // Placeholder, use appropriate method to detect browser version
+$os = 'unknown'; // Placeholder, use appropriate method to detect OS
+$window_width = isset($_GET['window_width']) ? intval($_GET['window_width']) : 0;
+$window_height = isset($_GET['window_height']) ? intval($_GET['window_height']) : 0;
+$screen_width = isset($_GET['screen_width']) ? intval($_GET['screen_width']) : 0;
+$screen_height = isset($_GET['screen_height']) ? intval($_GET['screen_height']) : 0;
 $referrer = $_SERVER['HTTP_REFERER'] ?? 'unknown';
 $current_url = $_SERVER['REQUEST_URI'];
+$latitude = isset($_GET['latitude']) ? floatval($_GET['latitude']) : 0.0;
+$longitude = isset($_GET['longitude']) ? floatval($_GET['longitude']) : 0.0;
 $ip_address = getUserIpAddr();
 
 // Prepare the SQL statement
-$sql = "INSERT INTO user_tracking (user_agent, referrer, current_url, ip_address, created_at) VALUES (?, ?, ?, ?, NOW())";
+$sql = "INSERT INTO user_tracking (user_agent, browser_name, browser_version, os, window_width, window_height, screen_width, screen_height, referrer, current_url, latitude, longitude, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die(json_encode(["response" => "Prepare failed: " . $conn->error]));
 }
 
 // Bind parameters
-$stmt->bind_param("ssss", $user_agent, $referrer, $current_url, $ip_address);
+$stmt->bind_param("ssssiiiiissss", $user_agent, $browser_name, $browser_version, $os, $window_width, $window_height, $screen_width, $screen_height, $referrer, $current_url, $latitude, $longitude, $ip_address);
 
 // Execute the statement
 if ($stmt->execute()) {
