@@ -19,26 +19,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (message.toLowerCase().startsWith("search wikipedia for")) {
             const query = message.substring(20).trim();
-            if (query) {
-                fetch(`wikipedia_search.php?query=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.error) {
-                            appendMessage("bot", data.error);
-                        } else {
-                            const results = data.results.map(result => {
-                                return `<a href="${result.url}" target="_blank">${result.title}</a>: ${result.snippet}`;
-                            }).join("<br><br>");
-                            appendMessage("bot", results);
-                        }
-                    })
-                    .catch(error => {
-                        appendMessage("bot", "Error searching Wikipedia.");
-                        console.error("Error:", error);
-                    });
-            } else {
-                appendMessage("bot", "Please provide a search query.");
-            }
+            searchWikipedia(query);
+        } else if (message.toLowerCase().startsWith("search duckduckgo for")) {
+            const query = message.substring(21).trim();
+            searchDuckDuckGo(query);
         } else {
             fetch("ai-chat.php", {
                 method: "POST",
@@ -54,30 +38,66 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function endChat() {
-        fetch("ai-chat.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "end_chat=true",
-        })
-        .then(response => response.json())
-        .then(data => appendMessage("bot", data.response))
-        .catch(error => console.error("❌ Fetch Error:", error));
+    function searchWikipedia(query) {
+        fetch(`wikipedia_search.php?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    appendMessage("bot", data.error);
+                } else {
+                    const results = data.results.map(result => {
+                        return `<a href="${result.url}" target="_blank">${result.title}</a>: ${result.snippet}`;
+                    }).join("<br><br>");
+                    appendMessage("bot", results);
+                }
+            })
+            .catch(error => {
+                appendMessage("bot", "Error searching Wikipedia.");
+                console.error("Error:", error);
+            });
     }
 
-    function reloadChat() {
-        fetch("ai-chat.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "reset_chat=true",
-        })
+    function searchDuckDuckGo(query) {
+        fetch(`duckduckgo_search.php?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    appendMessage("bot", data.error);
+                } else {
+                    appendMessage("bot", data.result);
+                }
+            })
+            .catch(error => {
+                appendMessage("bot", "Error searching DuckDuckGo.");
+                console.error("Error:", error);
+            });
+    }
+
+    function appendMessage(sender, message) {
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add(sender);
+        msgDiv.innerHTML = message;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    fetch("ai-chat.php?init_chat=true")
         .then(response => response.json())
         .then(data => {
-            appendMessage("bot", data.response);
-            setTimeout(() => location.reload(true), 1000);
+            if (data.greeting) appendMessage("bot", data.response);
         })
         .catch(error => console.error("❌ Fetch Error:", error));
-    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    userInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+    endChatBtn.addEventListener("click", endChat);
+    reloadChatBtn.addEventListener("click", reloadChat);
+    speechBtn.addEventListener("click", startSpeechRecognition); // ✅ Voice Button Click Event
 
     function startSpeechRecognition() {
         if (!('webkitSpeechRecognition' in window)) {
@@ -116,31 +136,30 @@ document.addEventListener("DOMContentLoaded", function () {
         };
     }
 
-    function appendMessage(sender, message) {
-        const msgDiv = document.createElement("div");
-        msgDiv.classList.add(sender);
-        msgDiv.innerHTML = message;
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
+    function endChat() {
+        fetch("ai-chat.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "end_chat=true",
+        })
+        .then(response => response.json())
+        .then(data => appendMessage("bot", data.response))
+        .catch(error => console.error("❌ Fetch Error:", error));
     }
 
-    fetch("ai-chat.php?init_chat=true")
+    function reloadChat() {
+        fetch("ai-chat.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "reset_chat=true",
+        })
         .then(response => response.json())
         .then(data => {
-            if (data.greeting) appendMessage("bot", data.response);
+            appendMessage("bot", data.response);
+            setTimeout(() => location.reload(true), 1000);
         })
         .catch(error => console.error("❌ Fetch Error:", error));
-
-    sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            sendMessage();
-        }
-    });
-    endChatBtn.addEventListener("click", endChat);
-    reloadChatBtn.addEventListener("click", reloadChat);
-    speechBtn.addEventListener("click", startSpeechRecognition); // ✅ Voice Button Click Event
+    }
 
     function getUserData() {
         var browserVersion = getBrowserVersion();
