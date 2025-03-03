@@ -9,14 +9,8 @@ function getUserData() {
     var windowHeight = window.innerHeight;
     var referrer = document.referrer;
     var currentUrl = window.location.href;
-    var ipAddress = '';
 
-    fetch('https://api.ipify.org?format=json')
-        .then(response => response.json())
-        .then(data => {
-            ipAddress = data.ip;
-            sendUserData();
-        });
+    sendUserData();
 
     function sendUserData() {
         var data = {
@@ -29,8 +23,7 @@ function getUserData() {
             screen_width: screenWidth,
             screen_height: screenHeight,
             referrer: referrer,
-            current_url: currentUrl,
-            ip_address: ipAddress
+            current_url: currentUrl
         };
 
         fetch('ai-chat.php', {

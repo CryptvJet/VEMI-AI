@@ -29,13 +29,13 @@ if ($conn->connect_error) {
 
 // Function to log user interactions
 function logUserInteraction($conn, $data) {
-    $stmt = $conn->prepare("INSERT INTO user_tracking (user_agent, browser_name, browser_version, os, window_width, window_height, screen_width, screen_height, referrer, current_url, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO user_tracking (user_agent, browser_name, browser_version, os, window_width, window_height, screen_width, screen_height, referrer, current_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     if (!$stmt) {
         error_log("Prepare failed: " . $conn->error);
         return false;
     }
 
-    $stmt->bind_param("ssssiiiisss", 
+    $stmt->bind_param("ssssiiiiss", 
         $data['user_agent'], 
         $data['browser_name'], 
         $data['browser_version'], 
@@ -45,8 +45,7 @@ function logUserInteraction($conn, $data) {
         $data['screen_width'], 
         $data['screen_height'], 
         $data['referrer'], 
-        $data['current_url'], 
-        $data['ip_address']
+        $data['current_url']
     );
 
     if (!$stmt->execute()) {
