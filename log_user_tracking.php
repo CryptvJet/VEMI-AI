@@ -25,47 +25,30 @@ function getUserIpAddr() {
     }
 }
 
-// Function to log user tracking information
-function logUserTracking($conn) {
-    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-    $browser_name = 'unknown'; // Placeholder, use appropriate method to detect browser name
-    $browser_version = 'unknown'; // Placeholder, use appropriate method to detect browser version
-    $os = 'unknown'; // Placeholder, use appropriate method to detect OS
-    $window_width = 0; // Placeholder, use JavaScript to get the actual value
-    $window_height = 0; // Placeholder, use JavaScript to get the actual value
-    $screen_width = 0; // Placeholder, use JavaScript to get the actual value
-    $screen_height = 0; // Placeholder, use JavaScript to get the actual value
-    $referrer = $_SERVER['HTTP_REFERER'] ?? 'unknown';
-    $current_url = $_SERVER['REQUEST_URI'];
-    $latitude = 0.0; // Placeholder, use JavaScript to get the actual value
-    $longitude = 0.0; // Placeholder, use JavaScript to get the actual value
-    $ip_address = getUserIpAddr();
+// Collect user data
+$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+$referrer = $_SERVER['HTTP_REFERER'] ?? 'unknown';
+$current_url = $_SERVER['REQUEST_URI'];
+$ip_address = getUserIpAddr();
 
-    $stmt = $conn->prepare("INSERT INTO user_tracking (user_agent, browser_name, browser_version, os, window_width, window_height, screen_width, screen_height, referrer, current_url, latitude, longitude, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-    if (!$stmt) {
-        error_log("Prepare failed: " . $conn->error);
-        return false;
-    }
-
-    // Correct number of parameters
-    $stmt->bind_param("ssssiiiiisssds", $user_agent, $browser_name, $browser_version, $os, $window_width, $window_height, $screen_width, $screen_height, $referrer, $current_url, $latitude, $longitude, $ip_address);
-
-    if (!$stmt->execute()) {
-        error_log("Execute failed: " . $stmt->error);
-        $stmt->close();
-        return false;
-    }
-
-    $stmt->close();
-    return true;
+// Prepare the SQL statement
+$sql = "INSERT INTO user_tracking (user_agent, referrer, current_url, ip_address, created_at) VALUES (?, ?, ?, ?, NOW())";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die(json_encode(["response" => "Prepare failed: " . $conn->error]));
 }
 
-// Log user tracking information
-if (logUserTracking($conn)) {
+// Bind parameters
+$stmt->bind_param("ssss", $user_agent, $referrer, $current_url, $ip_address);
+
+// Execute the statement
+if ($stmt->execute()) {
     echo json_encode(["response" => "User tracking information logged successfully."]);
 } else {
     echo json_encode(["response" => "Failed to log user tracking information."]);
 }
 
+// Close the statement and connection
+$stmt->close();
 $conn->close();
 ?>
