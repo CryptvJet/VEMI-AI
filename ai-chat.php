@@ -121,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user_message = preg_replace("/[^a-z0-9\s]/", "", $user_message);
 
     // Check for trained responses in the database
-    $stmt = $conn->prepare("SELECT bot_response FROM responses WHERE user_message = ? ORDER BY FIELD(response_type, 'Master', 'AI', 'Uploaded') LIMIT 1");
+    $stmt = $conn->prepare("SELECT bot_response FROM responses WHERE user_message = ? ORDER BY FIELD(response_type, 'Master', 'AI') LIMIT 1");
     $stmt->bind_param("s", $user_message);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -145,6 +145,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->execute();
                 $stmt->close();
             }
+        } else {
+            // Log unanswered question for training
+            $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
+            $stmt->bind_param("s", $user_message);
+            $stmt->execute();
+            $stmt->close();
         }
     }
 
