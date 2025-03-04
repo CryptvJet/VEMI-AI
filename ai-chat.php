@@ -139,19 +139,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $bot_response = searchWeb($user_message);
 
             // Store the new response in the database as an AI response
-            if ($bot_response !== "No results found on Wikipedia." && $bot_response !== "No results found on DuckDuckGo.") {
-                $stmt = $conn->prepare("INSERT INTO responses (user_message, bot_response, response_type, created_at) VALUES (?, ?, 'AI', NOW())");
-                $stmt->bind_param("ss", $user_message, $bot_response);
-                $stmt->execute();
-                $stmt->close();
-            }
-        } else {
-            // Log unanswered question for training
-            $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
-            $stmt->bind_param("s", $user_message);
+            $stmt = $conn->prepare("INSERT INTO responses (user_message, bot_response, response_type, created_at) VALUES (?, ?, 'AI', NOW())");
+            $stmt->bind_param("ss", $user_message, $bot_response);
             $stmt->execute();
             $stmt->close();
         }
+
+        // Log unanswered question for training
+        $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
+        $stmt->bind_param("s", $user_message);
+        $stmt->execute();
+        $stmt->close();
     }
 
     // Save session log
