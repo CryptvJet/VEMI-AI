@@ -72,22 +72,5 @@ window.onload = sendTrackingData;
 
     <!-- ✅ Load script AFTER the page is fully loaded -->
     <script src="js/script.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            fetch("ai-chat.php?init_chat=true")
-                .then(response => response.json())
-                .then(data => {
-                    if (data.greeting) {
-                        const chatBox = document.getElementById("chat-box");
-                        const msgDiv = document.createElement("div");
-                        msgDiv.classList.add("bot");
-                        msgDiv.innerText = data.response;
-                        chatBox.appendChild(msgDiv);
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                    }
-                })
-                .catch(error => console.error("❌ Fetch Error:", error));
-        });
-    </script>
 </body>
 </html>
