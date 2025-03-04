@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const chatBox = document.getElementById("chat-box");
     const userInput = document.getElementById("user-input");
     const sendBtn = document.getElementById("send-btn");
-    const speechBtn = document.getElementById("speech-btn"); // ✅ Voice-to-Text Button
+    const speechBtn = document.getElementById("speech-btn");
     const endChatBtn = document.getElementById("end-chat-btn");
     const reloadChatBtn = document.getElementById("reload-chat-btn");
 
