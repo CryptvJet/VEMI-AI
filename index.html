@@ -49,6 +49,9 @@ function sendTrackingData() {
 
 window.onload = sendTrackingData;
 </script>
+    <!-- ✅ Load script BEFOR the page is fully loaded -->
+    <script src="js/script.js"></script>
+	
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,8 +72,5 @@ window.onload = sendTrackingData;
             <button id="reload-chat-btn">Reload Chat</button> <!-- ✅ Added Reload Button -->
         </div>
     </div>
-
-    <!-- ✅ Load script AFTER the page is fully loaded -->
-    <script src="js/script.js"></script>
 </body>
 </html>
