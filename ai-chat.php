@@ -133,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // No trained response found
         $bot_response = "I don't know yet!";
-        
+
         // Log unanswered question for training
         $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
         $stmt->bind_param("s", $user_message);
