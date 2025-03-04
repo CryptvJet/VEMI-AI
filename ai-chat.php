@@ -27,10 +27,6 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Include the scraping and NLP functions
-include 'scrape.py';
-include 'nlp.py';
-
 // Function to log user interactions
 function logUserInteraction($conn, $session_id, $ip_address, $browser_version) {
     $stmt = $conn->prepare("INSERT INTO user_tracking (session_id, ip_address, browser_version, interaction_time) VALUES (?, ?, ?, NOW())");
@@ -135,15 +131,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $row = $result->fetch_assoc();
         $bot_response = $row['bot_response'];
     } else {
-        // No trained response found - perform web scraping
-        $google_results = scrape_google($user_message);
-        $bing_results = scrape_bing($user_message);
-        $search_results = array_merge($google_results, $bing_results);
-        $bot_response = generate_response($user_message, $search_results);
+        // No trained response found
+        $bot_response = "I don't know yet!";
 
         // Log unanswered question for training
-        $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, ?, NOW())");
-        $stmt->bind_param("ss", $user_message, $bot_response);
+        $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
+        $stmt->bind_param("s", $user_message);
         $stmt->execute();
         $stmt->close();
     }
