@@ -131,12 +131,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $row = $result->fetch_assoc();
         $bot_response = $row['bot_response'];
     } else {
-        // No trained response found
-        $bot_response = "I don't know yet!";
+        // No trained response found - perform web scraping
+        $command = escapeshellcmd("python3 py/scrape.py '$user_message'");
+        $output = shell_exec($command);
+
+        // Decode the JSON output from the Python script
+        $search_results = json_decode($output, true);
+
+        // Generate response using spaCy
+        $command = escapeshellcmd("python3 py/nlp.py '$user_message' '$output'");
+        $response_output = shell_exec($command);
+        $bot_response = $response_output;
 
         // Log unanswered question for training
-        $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, 'I don\\'t know yet!', NOW())");
-        $stmt->bind_param("s", $user_message);
+        $stmt = $conn->prepare("INSERT IGNORE INTO messages (user_message, bot_response, created_at) VALUES (?, ?, NOW())");
+        $stmt->bind_param("ss", $user_message, $bot_response);
         $stmt->execute();
         $stmt->close();
     }
