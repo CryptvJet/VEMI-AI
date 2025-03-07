@@ -17,6 +17,15 @@ def generate_response(user_message, search_results):
 if __name__ == "__main__":
     user_message = sys.argv[1]
     search_results_json = sys.argv[2]
-    search_results = json.loads(search_results_json)
-    response = generate_response(user_message, search_results)
-    print(response)
+
+    # Debugging: Print the user message and search results JSON
+    print(f"User Message: {user_message}")
+    print(f"Search Results JSON: {search_results_json}")
+
+    try:
+        search_results = json.loads(search_results_json)
+        response = generate_response(user_message, search_results)
+        print(response)
+    except json.JSONDecodeError as e:
+        print(f"JSON Decode Error: {e}")
+        print("Invalid JSON input.")

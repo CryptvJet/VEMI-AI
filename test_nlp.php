@@ -45,6 +45,12 @@ if (is_resource($process)) {
         // Decode the JSON output from the Python script
         $search_results = json_decode($output, true);
 
+        // Ensure search results are valid JSON
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo json_encode(["response" => "Invalid JSON from scrape.py", "error_output" => json_last_error_msg()]);
+            exit;
+        }
+
         // Execute the Python script for NLP response generation
         $search_results_json = json_encode($search_results);
         $command = escapeshellcmd("python3 py/nlp.py '$user_message' '$search_results_json'");
