@@ -139,7 +139,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $search_results = json_decode($output, true);
 
         // Generate response using spaCy
-        $command = escapeshellcmd("python3 py/nlp.py '$user_message' '$output'");
+        $search_results_json = json_encode($search_results);
+        $command = escapeshellcmd("python3 py/nlp.py '$user_message' '$search_results_json'");
         $response_output = shell_exec($command);
         $bot_response = $response_output;
 
