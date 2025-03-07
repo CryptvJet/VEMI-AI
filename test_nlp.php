@@ -52,8 +52,8 @@ if (is_resource($process)) {
         }
 
         // Execute the Python script for NLP response generation
-        $search_results_json = escapeshellarg(json_encode($search_results));
-        $command = "python3 py/nlp.py " . escapeshellarg($user_message) . " " . $search_results_json;
+        $search_results_json = json_encode($search_results, JSON_UNESCAPED_SLASHES);
+        $command = "python3 py/nlp.py " . escapeshellarg($user_message) . " " . escapeshellarg($search_results_json);
         $process = proc_open($command, $descriptorspec, $pipes);
 
         if (is_resource($process)) {
