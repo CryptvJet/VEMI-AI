@@ -32,10 +32,15 @@ if (is_resource($process)) {
     // Close the process
     $return_value = proc_close($process);
 
+    // Log the command and outputs
+    error_log("Command: $command");
+    error_log("Output: $output");
+    error_log("Error Output: $error_output");
+    error_log("Return Value: $return_value");
+
     // Check for errors
     if ($return_value !== 0) {
-        error_log("Error executing command: $error_output");
-        echo json_encode(["response" => "Error executing command."]);
+        echo json_encode(["response" => "Error executing command.", "error_output" => $error_output]);
     } else {
         // Decode the JSON output from the Python script
         $results = json_decode($output, true);
