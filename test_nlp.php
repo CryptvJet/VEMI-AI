@@ -9,16 +9,82 @@ $user_message = "Tell me about the latest AI news";
 
 // Execute the Python script for web scraping
 $command = escapeshellcmd("python3 py/scrape.py '$user_message'");
-$output = shell_exec($command);
+$descriptorspec = array(
+    0 => array("pipe", "r"),  // stdin
+    1 => array("pipe", "w"),  // stdout
+    2 => array("pipe", "w")   // stderr
+);
 
-// Decode the JSON output from the Python script
-$search_results = json_decode($output, true);
+$process = proc_open($command, $descriptorspec, $pipes);
 
-// Execute the Python script for NLP response generation
-$search_results_json = json_encode($search_results);
-$command = escapeshellcmd("python3 py/nlp.py '$user_message' '$search_results_json'");
-$response_output = shell_exec($command);
+if (is_resource($process)) {
+    // Close stdin
+    fclose($pipes[0]);
 
-// Print the response
-echo json_encode(["response" => $response_output], JSON_PRETTY_PRINT);
+    // Read the output from stdout
+    $output = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+
+    // Read any errors from stderr
+    $error_output = stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+
+    // Close the process
+    $return_value = proc_close($process);
+
+    // Log the command and outputs
+    error_log("Command: $command");
+    error_log("Output: $output");
+    error_log("Error Output: $error_output");
+    error_log("Return Value: $return_value");
+
+    // Check for errors
+    if ($return_value !== 0) {
+        echo json_encode(["response" => "Error executing command.", "error_output" => $error_output]);
+    } else {
+        // Decode the JSON output from the Python script
+        $search_results = json_decode($output, true);
+
+        // Execute the Python script for NLP response generation
+        $search_results_json = json_encode($search_results);
+        $command = escapeshellcmd("python3 py/nlp.py '$user_message' '$search_results_json'");
+        $process = proc_open($command, $descriptorspec, $pipes);
+
+        if (is_resource($process)) {
+            // Close stdin
+            fclose($pipes[0]);
+
+            // Read the output from stdout
+            $response_output = stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
+
+            // Read any errors from stderr
+            $error_output = stream_get_contents($pipes[2]);
+            fclose($pipes[2]);
+
+            // Close the process
+            $return_value = proc_close($process);
+
+            // Log the command and outputs
+            error_log("Command: $command");
+            error_log("Output: $response_output");
+            error_log("Error Output: $error_output");
+            error_log("Return Value: $return_value");
+
+            // Check for errors
+            if ($return_value !== 0) {
+                echo json_encode(["response" => "Error executing command.", "error_output" => $error_output]);
+            } else {
+                // Print the response
+                echo json_encode(["response" => $response_output], JSON_PRETTY_PRINT);
+            }
+        } else {
+            error_log("Could not open process for command: $command");
+            echo json_encode(["response" => "Could not open process."]);
+        }
+    }
+} else {
+    error_log("Could not open process for command: $command");
+    echo json_encode(["response" => "Could not open process."]);
+}
 ?>
