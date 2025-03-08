@@ -5,10 +5,8 @@ ini_set('display_errors', 1);
 ini_set("log_errors", 1);
 ini_set("error_log", "debug.log");
 
-$servername = "localhost";
-$username = "vemite5_ai";
-$password = "]Rl2!vy+8W3~";
-$database = "vemite5_ai";
+require_once 'db.php';
+require_once 'config.php';
 
 session_start();
 
@@ -19,13 +17,6 @@ if (!isset($_SESSION['session_id'])) {
 
 $session_id = $_SESSION['session_id'];
 $ip_address = $_SERVER['REMOTE_ADDR'];
-
-$conn = new mysqli($servername, $username, $password, $database);
-if ($conn->connect_error) {
-    error_log("Database connection failed: " . $conn->connect_error);
-    echo json_encode(["response" => "Database connection failed."]);
-    exit;
-}
 
 // Function to log user interactions
 function logUserInteraction($conn, $session_id, $ip_address, $browser_version) {
@@ -87,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Handle "End Chat" Request
-    if (isset($_POST["end_chat"])) {
+    if (isset($input["end_chat"])) {
         $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, 'User ended chat', 'Chat session ended.', NOW())");
         $stmt->bind_param("ss", $session_id, $ip_address);
         $stmt->execute();
@@ -99,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Handle "Reload Chat" Request
-    if (isset($_POST["reset_chat"])) {
+    if (isset($input["reset_chat"])) {
         $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, 'User refreshed chat', 'Chat reset.', NOW())");
         $stmt->bind_param("ss", $session_id, $ip_address);
         $stmt->execute();
@@ -111,7 +102,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Get User Message & Normalize Input
-    $user_message = trim($_POST["message"] ?? '');
+    $user_message = trim($input["message"] ?? '');
     if ($user_message === '') {
         echo json_encode(["response" => "I don't know yet!"]);
         exit;
