@@ -5,8 +5,10 @@ ini_set('display_errors', 1);
 ini_set("log_errors", 1);
 ini_set("error_log", "debug.log");
 
-require_once 'db.php';
-require_once 'config.php';
+$servername = "localhost";
+$username = "vemite5_ai";
+$password = "]Rl2!vy+8W3~";
+$database = "vemite5_ai";
 
 session_start();
 
@@ -17,6 +19,13 @@ if (!isset($_SESSION['session_id'])) {
 
 $session_id = $_SESSION['session_id'];
 $ip_address = $_SERVER['REMOTE_ADDR'];
+
+$conn = new mysqli($servername, $username, $password, $database);
+if ($conn->connect_error) {
+    error_log("Database connection failed: " . $conn->connect_error);
+    echo json_encode(["response" => "Database connection failed."]);
+    exit;
+}
 
 // Function to log user interactions
 function logUserInteraction($conn, $session_id, $ip_address, $browser_version) {
@@ -140,6 +149,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("ss", $user_message, $bot_response);
         $stmt->execute();
         $stmt->close();
+
+        // Also log the response in the responses table
+        $stmt = $conn->prepare("INSERT INTO responses (user_message, bot_response, response_type) VALUES (?, ?, 'AI')");
+        $stmt->bind_param("ss", $user_message, $bot_response);
+        $stmt->execute();
+        $stmt->close();
     }
 
     // Save session log
@@ -148,13 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->execute();
     $stmt->close();
 
-    // Ensure "How can I help you?" appears once per response cycle
-    if (!isset($_SESSION["help_shown"])) {
-        $_SESSION["help_shown"] = false;
-    }
-    $_SESSION["last_message_time"] = time();
-
-    echo json_encode(["response" => $bot_response, "show_help" => true]);
+    echo json_encode(["response" => $bot_response]);
 
     $conn->close();
     exit;
