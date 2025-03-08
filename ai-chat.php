@@ -87,7 +87,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Handle "End Chat" Request
-    if (isset($input["end_chat"])) {
+    if (isset($_POST["end_chat"])) {
         $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, 'User ended chat', 'Chat session ended.', NOW())");
         $stmt->bind_param("ss", $session_id, $ip_address);
         $stmt->execute();
@@ -99,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Handle "Reload Chat" Request
-    if (isset($input["reset_chat"])) {
+    if (isset($_POST["reset_chat"])) {
         $stmt = $conn->prepare("INSERT INTO session_logs (session_id, ip_address, user_message, bot_response, created_at) VALUES (?, ?, 'User refreshed chat', 'Chat reset.', NOW())");
         $stmt->bind_param("ss", $session_id, $ip_address);
         $stmt->execute();
@@ -111,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Get User Message & Normalize Input
-    $user_message = trim($input["message"] ?? '');
+    $user_message = trim($_POST["message"] ?? '');
     if ($user_message === '') {
         echo json_encode(["response" => "I don't know yet!"]);
         exit;
@@ -149,12 +149,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("ss", $user_message, $bot_response);
         $stmt->execute();
         $stmt->close();
-
-        // Also log the response in the responses table
-        $stmt = $conn->prepare("INSERT INTO responses (user_message, bot_response, response_type) VALUES (?, ?, 'AI')");
-        $stmt->bind_param("ss", $user_message, $bot_response);
-        $stmt->execute();
-        $stmt->close();
     }
 
     // Save session log
@@ -163,7 +157,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->execute();
     $stmt->close();
 
-    echo json_encode(["response" => $bot_response]);
+    // Ensure "How can I help you?" appears once per response cycle
+    if (!isset($_SESSION["help_shown"])) {
+        $_SESSION["help_shown"] = false;
+    }
+    $_SESSION["last_message_time"] = time();
+
+    echo json_encode(["response" => $bot_response, "show_help" => true]);
 
     $conn->close();
     exit;
